@@ -8,12 +8,7 @@ from __future__ import annotations
 
 from .lexicon import Lexicon
 from .models import (
-    DEFAULT_CONFIG,
-    Flag,
-    ParserConfig,
-    ParseResult,
-    Span,
-    Token,
+    DEFAULT_CONFIG, Flag, ParserConfig, ParseResult, Span, Token,
 )
 from .types import Case, Number, PartOfSpeech, Person, RuleID, Voice
 
@@ -375,10 +370,43 @@ class GrammarRuleValidator:
                 # "were" for plural OR second person (you were)
                 return subj_number == Number.PLURAL or subj_person == Person.SECOND
 
+        # For "have" auxiliary verbs
+        if verb.lemma in Lexicon.AUXILIARY_HAVE:
+            if verb.lemma in {"have", "has"}:
+                # "has" for 3rd person singular, "have" for others
+                if subj_person == Person.THIRD and subj_number == Number.SINGULAR:
+                    return verb.lemma == "has"
+                return verb.lemma == "have"
+            # "had" works for all persons/numbers in past tense
+            if verb.lemma == "had":
+                return True
+
+        # For "do" auxiliary verbs
+        if verb.lemma in Lexicon.AUXILIARY_DO:
+            if verb.lemma in {"do", "does"}:
+                # "does" for 3rd person singular, "do" for others
+                if subj_person == Person.THIRD and subj_number == Number.SINGULAR:
+                    return verb.lemma == "does"
+                return verb.lemma == "do"
+            # "did" works for all persons/numbers in past tense
+            if verb.lemma == "did":
+                return True
+
+        # For modal verbs (can, could, will, would, etc.)
+        if verb.lemma in Lexicon.MODAL_VERBS:
+            return True  # Modals don't change form for agreement
+
+        # For past participles (worked, studied, etc.)
+        if verb.features.get("participle") == "past":
+            return True  # Past participles work with all subjects
+
         # For regular verbs: 3rd person singular should have -s
         if subj_person == Person.THIRD and subj_number == Number.SINGULAR:
             return verb.text.endswith("s") or verb.features.get("3sg", False)
         # Other persons: verb should not have -s ending (except irregular)
+        # But allow past tense forms (ended in -ed) for all persons
+        if verb.text.endswith("ed"):
+            return True
         return not verb.text.endswith("s") or verb.lemma in Lexicon.AUXILIARY_BE
 
     def _check_rule_12(self, parse_result: ParseResult) -> None:
@@ -426,11 +454,11 @@ class GrammarRuleValidator:
         """RULE 18: Adjectives belong to, and qualify, nouns expressed or understood."""
         for i, token in enumerate(parse_result.tokens):
             if token.pos == PartOfSpeech.ADJECTIVE:
-                # Check if followed by noun
-                has_noun = False
+                # Check if followed by noun (attributive use)
+                has_noun_after = False
                 for j in range(i + 1, len(parse_result.tokens)):
                     if parse_result.tokens[j].pos == PartOfSpeech.NOUN:
-                        has_noun = True
+                        has_noun_after = True
                         break
                     if parse_result.tokens[j].pos not in {
                         PartOfSpeech.ADJECTIVE,
@@ -438,17 +466,30 @@ class GrammarRuleValidator:
                     }:
                         break
 
-                if not has_noun:
-                    flag = Flag(
-                        rule=RuleID.RULE_18,  # Adjectives qualify nouns
-                        message=f"Adjective '{token.text}' may lack noun to qualify",
-                        span=Span(start=token.start, end=token.end),
-                    )
-                    parse_result.flags.append(flag)
-                    # Backwards compatibility
-                    parse_result.warnings.append(
-                        f"RULE 18: Adjective '{token.text}' may lack noun to qualify"
-                    )
+                # Check if preceded by "to be" verb (predicative use)
+                is_predicative = False
+                if i > 0:
+                    prev_token = parse_result.tokens[i - 1]
+                    if (
+                        prev_token.pos == PartOfSpeech.VERB
+                        and prev_token.lemma in Lexicon.AUXILIARY_BE
+                    ):
+                        is_predicative = True
+
+                # Skip if adjective is predicative (after "to be") or has a following noun
+                if is_predicative or has_noun_after:
+                    continue
+
+                flag = Flag(
+                    rule=RuleID.RULE_18,  # Adjectives qualify nouns
+                    message=f"Adjective '{token.text}' may lack noun to qualify",
+                    span=Span(start=token.start, end=token.end),
+                )
+                parse_result.flags.append(flag)
+                # Backwards compatibility
+                parse_result.warnings.append(
+                    f"RULE 18: Adjective '{token.text}' may lack noun to qualify"
+                )
 
     def _check_rule_20(self, parse_result: ParseResult) -> None:
         """RULE 20: Active-transitive verbs govern the objective case.
@@ -647,12 +688,14 @@ class GrammarRuleValidator:
         """
         violations = []
 
-        # Simple check: pronouns should have consistent gender/number features
+        # Only check personal pronouns, not demonstrative/relative/interrogative pronouns
         for token in parse_result.tokens:
             if token.pos == PartOfSpeech.PRONOUN:
-                # Check if pronoun has proper gender/number attributes
-                if not token.gender or not token.number:
-                    violations.append(token)
+                # Check if it's a personal pronoun (has pronoun_type feature)
+                if token.features.get("pronoun_type") == "personal":
+                    # Check if pronoun has proper gender/number attributes
+                    if not token.gender or not token.number:
+                        violations.append(token)
 
         parse_result.rule_checks[RuleID.RULE_13.value] = len(violations) == 0
 
@@ -830,11 +873,25 @@ class GrammarRuleValidator:
 
         for i, token in enumerate(parse_result.tokens):
             if token.pos == PartOfSpeech.ADVERB:
+                # Skip temporal adverbs that can stand alone (later, then, now, etc.)
+                temporal_adverbs = {
+                    "later",
+                    "then",
+                    "now",
+                    "today",
+                    "yesterday",
+                    "tomorrow",
+                    "soon",
+                    "recently",
+                }
+                if token.lemma in temporal_adverbs:
+                    continue
+
                 # Check if adverb has a valid target
                 has_target = False
 
-                # Look for targets before and after
-                for j in range(max(0, i - 3), min(len(parse_result.tokens), i + 4)):
+                # Look for targets before and after (extend window for better detection)
+                for j in range(max(0, i - 5), min(len(parse_result.tokens), i + 6)):
                     if j != i:
                         target_token = parse_result.tokens[j]
                         if target_token.pos in {

@@ -120,11 +120,76 @@ class OrthographyValidator:
                 if token.text[0].isupper() and token.pos.value == "noun":
                     continue
 
+                # Skip common words that don't follow doubling rules
+                common_exceptions = {
+                    "years",
+                    "students",
+                    "studious",
+                    "serious",
+                    "obvious",
+                    "previous",
+                    "various",
+                    "curious",
+                    "glorious",
+                    "victorious",
+                    "mysterious",
+                    "generous",
+                    "numerous",
+                    "dangerous",
+                    "courageous",
+                    "outrageous",
+                    "advantageous",
+                    "disadvantageous",
+                    "courteous",
+                    "righteous",
+                    "spontaneous",
+                    "simultaneous",
+                    "instantaneous",
+                    "contemporaneous",
+                    "erroneous",
+                    "homogeneous",
+                    "heterogeneous",
+                    "extraneous",
+                    "subterraneous",
+                    "superfluous",
+                    "tempestuous",
+                    "voluptuous",
+                    "presumptuous",
+                    "sumptuous",
+                    "tumultuous",
+                    "unctuous",
+                    "virtuous",
+                    "sensuous",
+                    "conspicuous",
+                    "perspicuous",
+                    "ambiguous",
+                    "contiguous",
+                    "exiguous",
+                    "irreligious",
+                    "religious",
+                    "sacrilegious",
+                    "prodigious",
+                    "litigious",
+                    "prestigious",
+                    "tedious",
+                    "odious",
+                    "melodious",
+                    "commodious",
+                    "incommodious",
+                    "furious",
+                }
+
+                if word in common_exceptions:
+                    continue
+
                 # Check if polysyllable ending in f, l, or s
                 if not self._is_monosyllable(word) and word.endswith(("f", "l", "s")):
-                    # This is a simplified check - in practice, accent detection is complex
-                    # We'll flag potential issues for manual review
-                    if len(word) >= 4 and word[-1] in "fls":
+                    # Only flag if it's a verb that might need doubling for past tense/participle
+                    if (
+                        token.pos.value == "verb"
+                        and len(word) >= 4
+                        and word[-1] in "fls"
+                    ):
                         # Check if final consonant is not doubled
                         if word[-1] != word[-2]:
                             violations.append(token)
