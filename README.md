@@ -110,6 +110,8 @@ print(explanation)
 - **Part-of-Speech Classification**: Identifies 9 parts of speech with grammatical features
 - **Syntactic Parsing**: Extracts sentence structure (subject, verb, object)
 - **Grammar Rule Validation**: Checks sentences against traditional grammar rules
+- **Orthography Validation**: Validates spelling according to Kirkham's orthography rules
+- **Punctuation Validation**: Checks punctuation usage (commas, semicolons, colons, etc.)
 - **Voice Detection**: Identifies active, passive, or neuter voice
 - **Tense Detection**: Determines verb tense (present, past, future, perfect)
 - **Sentence Type Detection**: Classifies declarative, interrogative, imperative, exclamatory
@@ -119,14 +121,46 @@ print(explanation)
 
 ### Grammar Rules Implemented
 
-The parser implements checking for Kirkham's grammar rules:
+The parser implements comprehensive checking for Kirkham's grammar rules:
 
+#### Traditional Grammar Rules
+- **RULE 1**: A/an agrees with its noun in the singular only
+- **RULE 2**: The belongs to nouns to limit/define their meaning
 - **RULE 3**: The nominative case governs the verb
 - **RULE 4**: The verb must agree with its nominative in number and person
+- **RULE 8**: Compound subjects need plural verb/pronoun
 - **RULE 12**: A noun or pronoun in the possessive case is governed by the noun which it possesses
+- **RULE 13**: Personal pronouns agree with their nouns in gender and number
 - **RULE 18**: Adjectives belong to, and qualify, nouns expressed or understood
+- **RULE 19**: Adjective pronouns belong to nouns
 - **RULE 20**: Active-transitive verbs govern the objective case
+- **RULE 21**: To be admits the same case after it as before it
+- **RULE 25**: Bare infinitive after certain verbs
+- **RULE 28**: Perfect participle belongs to noun/pronoun
+- **RULE 29**: Adverbs qualify verbs, participles, adjectives, and other adverbs
+- **RULE 30**: Prepositions are generally placed before the case they govern
 - **RULE 31**: Prepositions govern the objective case
+
+#### Orthography Rules (Spelling)
+- **ORTHO I**: Monosyllables ending in f, l, or s - double final consonant
+- **ORTHO II**: Polysyllables ending in f, l, or s - accent-based doubling
+- **ORTHO III**: Words ending in y after consonant - change y → i
+- **ORTHO IV**: Words ending in y after vowel - retain y
+- **ORTHO V**: Suffixes -able, -ous - drop final e except after c/g
+- **ORTHO VI**: Final silent e - drop before vowel-initial suffix
+- **ORTHO VII-IX**: Additional derivative/spelling cases
+- **ORTHO X**: Adding -ing or -ish - drop final e
+
+#### Punctuation Rules
+- **COMMA 1-10**: Comprehensive comma usage rules
+- **SEMICOLON 1-2**: Semicolon usage for compound members and examples
+- **COLON 1-2**: Colon usage for supplemental remarks and pauses
+- **PERIOD**: Complete independent sentences end with period
+- **DASH**: Sudden breaks, significant pauses, unexpected turns
+- **INTERROGATION**: Direct questions end with question mark
+- **EXCLAMATION**: Strong emotion ends with exclamation mark
+- **APOSTROPHE**: Correct apostrophe usage
+- **QUOTATION**: Correct quotation mark usage
 
 ### Advanced Features
 
@@ -136,6 +170,9 @@ The parser implements checking for Kirkham's grammar rules:
 - **Multiple Output Formats**: JSON, CONLL, Penn Treebank, Graphviz
 - **Performance Profiling**: Built-in performance monitoring
 - **Error Recovery**: Graceful handling of parsing errors
+- **Comprehensive Rule Coverage**: 35+ grammar rules, 10 orthography rules, 15+ punctuation rules
+- **Smart Proper Noun Detection**: Automatically skips proper nouns in spelling validation
+- **Unicode Support**: Handles modern Unicode characters and symbols
 
 ## 🏗️ Architecture
 
@@ -146,7 +183,9 @@ The parser follows SOLID principles with a modular, object-oriented design:
 - **`KirkhamParser`**: Main API interface
 - **`PartOfSpeechClassifier`**: Word classification using lexicons and heuristics
 - **`SyntacticParser`**: Sentence structure analysis
-- **`GrammarRuleValidator`**: Grammar rule checking
+- **`GrammarRuleValidator`**: Traditional grammar rule checking
+- **`OrthographyValidator`**: Spelling validation according to Kirkham's orthography rules
+- **`PunctuationValidator`**: Punctuation usage validation
 - **`OutputFormatter`**: Multiple output format support
 - **`Lexicon`**: Pluggable word lists and dictionaries
 
@@ -174,6 +213,29 @@ print(f"Verb: {result.verb_phrase.text}")  # "sat"
 print(f"Voice: {result.voice.value}")  # "neuter"
 ```
 
+### Orthography and Punctuation Validation
+
+```python
+from kirkham import KirkhamParser
+
+parser = KirkhamParser()
+
+# Orthography validation (spelling)
+result = parser.parse("I am happi.")
+print("Spelling flags:", [f.message for f in result.flags if 'ORTHO' in f.rule.value])
+# Output: ['Word ending in y after consonant should change y to i before termination']
+
+# Punctuation validation
+result = parser.parse("Hello world")  # Missing period
+print("Punctuation flags:", [f.message for f in result.flags if 'PERIOD' in f.rule.value])
+# Output: ['Sentence should end with period, exclamation, or question mark']
+
+# Proper nouns are correctly ignored
+result = parser.parse("Lagos is a city in Nigeria.")
+print("Orthography flags:", [f.message for f in result.flags if 'ORTHO' in f.rule.value])
+# Output: [] (no flags - proper nouns ignored)
+```
+
 ### Configuration
 
 ```python
@@ -181,9 +243,22 @@ from kirkham import KirkhamParser, ParserConfig
 
 # Custom configuration
 config = ParserConfig(
+    # Traditional grammar rules
     enforce_rule_20_strict=False,  # Allow transitive verbs without objects
     allow_informal_pronouns=True,  # Allow "It's me"
-    enable_extended_validation=True  # Enable additional checks
+    enable_extended_validation=True,  # Enable additional checks
+
+    # Orthography (spelling) rules
+    enforce_ortho_rules=True,  # Enable orthography checking
+    enforce_ortho_i=True,  # Monosyllables ending in f/l/s
+    enforce_ortho_ii=True,  # Polysyllables ending in f/l/s
+    enforce_ortho_iii=True,  # Words ending in y after consonant
+
+    # Punctuation rules
+    enforce_punctuation_rules=True,  # Enable punctuation checking
+    enforce_comma_rules=True,  # Enable comma rules
+    enforce_period_rules=True,  # Enable period rules
+    enforce_semicolon_rules=True,  # Enable semicolon rules
 )
 
 parser = KirkhamParser(config)
@@ -441,7 +516,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Version**: 0.0.1
+**Version**: 0.1.0
 **Status**: ✅ Active Development
 **Python**: 3.8+
 **License**: MIT
+
+### What's New in v0.1.0
+
+- ✨ **Orthography Rules**: Complete implementation of Kirkham's spelling rules (ORTHO I-X)
+- ✨ **Punctuation Rules**: Comprehensive punctuation validation (COMMA, SEMICOLON, COLON, etc.)
+- ✨ **Proper Noun Handling**: Smart detection that skips proper nouns in spelling checks
+- ✨ **Enhanced Grammar Rules**: Additional Kirkham grammar rules (RULE 1, 2, 8, 13, 19, 21, 25, 28, 29, 30)
+- ✨ **Configurable Validation**: Granular control over which rules to enforce
+- ✨ **Improved Accuracy**: Better pronoun classification and case detection
