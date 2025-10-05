@@ -10,7 +10,14 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .types import (
-    Case, Gender, Number, PartOfSpeech, Person, RuleID, SentenceType, Tense,
+    Case,
+    Gender,
+    Number,
+    PartOfSpeech,
+    Person,
+    RuleID,
+    SentenceType,
+    Tense,
     Voice,
 )
 

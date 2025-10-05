@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
-from .models import Flag, ParseResult, Span, Token
+from .models import Flag, ParseResult, Span
 from .types import RuleID
 
 
@@ -24,12 +22,14 @@ class PunctuationValidator:
         violations = []
 
         # Look for sentences that should end with periods
-        if not parse_result.tokens[-1].text.endswith(('.', '!', '?')):
-            violations.append((
-                RuleID.PERIOD_RULE,
-                'Sentence should end with period, exclamation, or question mark',
-                Span(parse_result.tokens[-1].end, parse_result.tokens[-1].end)
-            ))
+        if not parse_result.tokens[-1].text.endswith((".", "!", "?")):
+            violations.append(
+                (
+                    RuleID.PERIOD_RULE,
+                    "Sentence should end with period, exclamation, or question mark",
+                    Span(parse_result.tokens[-1].end, parse_result.tokens[-1].end),
+                )
+            )
 
         parse_result.rule_checks[RuleID.PERIOD_RULE.value] = len(violations) == 0
 

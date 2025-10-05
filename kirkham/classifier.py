@@ -260,29 +260,27 @@ class PartOfSpeechClassifier:
         """Determine person from pronoun lemma."""
         if lemma in {"my", "mine", "our", "ours"}:
             return Person.FIRST
-        elif lemma in {"your", "yours"}:
+        if lemma in {"your", "yours"}:
             return Person.SECOND
-        elif lemma in {"his", "her", "hers", "its", "their", "theirs"}:
+        if lemma in {"his", "her", "hers", "its", "their", "theirs"}:
             return Person.THIRD
-        else:
-            return Person.THIRD  # Default fallback
+        return Person.THIRD  # Default fallback
 
     def _get_pronoun_gender(self, lemma: str) -> Gender:
         """Determine gender from pronoun lemma."""
         if lemma in {"i", "me", "we", "us", "my", "mine", "our", "ours"}:
             return Gender.NEUTER  # First person - gender neutral
-        elif lemma in {"you", "ye", "your", "yours", "thou", "thee", "thy", "thine"}:
+        if lemma in {"you", "ye", "your", "yours", "thou", "thee", "thy", "thine"}:
             return Gender.NEUTER  # Second person - gender neutral
-        elif lemma in {"he", "him", "his"}:
+        if lemma in {"he", "him", "his"}:
             return Gender.MASCULINE
-        elif lemma in {"she", "her", "hers"}:
+        if lemma in {"she", "her", "hers"}:
             return Gender.FEMININE
-        elif lemma in {"it", "its"}:
+        if lemma in {"it", "its"}:
             return Gender.NEUTER
-        elif lemma in {"they", "them", "their", "theirs"}:
+        if lemma in {"they", "them", "their", "theirs"}:
             return Gender.NEUTER  # Third person plural - gender neutral
-        else:
-            return Gender.NEUTER  # Default fallback
+        return Gender.NEUTER  # Default fallback
 
     def _create_demonstrative_token(
         self, word: str, lemma: str, start: int, end: int

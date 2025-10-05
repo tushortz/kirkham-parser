@@ -5,10 +5,7 @@ This module implements Kirkham's orthography rules I-X for spelling validation.
 
 from __future__ import annotations
 
-import re
-from typing import List, Tuple
-
-from .models import Flag, ParseResult, Span, Token
+from .models import Flag, ParseResult, Span
 from .types import RuleID
 
 
@@ -56,8 +53,23 @@ class OrthographyValidator:
 
         # Exception words that don't follow the rule
         exceptions = {
-            "if", "of", "is", "as", "has", "was", "this", "thus", "us", "yes",
-            "gas", "bus", "plus", "minus", "focus", "campus", "status"
+            "if",
+            "of",
+            "is",
+            "as",
+            "has",
+            "was",
+            "this",
+            "thus",
+            "us",
+            "yes",
+            "gas",
+            "bus",
+            "plus",
+            "minus",
+            "focus",
+            "campus",
+            "status",
         }
 
         for token in parse_result.tokens:
@@ -149,11 +161,19 @@ class OrthographyValidator:
                     if consonant_before_y not in "aeiou":
                         # Check if word has a termination that should trigger y→i change
                         # This is a simplified check - in practice, we'd need a comprehensive list
-                        common_endings = ["ed", "er", "est", "ly", "ness", "ment", "ful"]
+                        common_endings = [
+                            "ed",
+                            "er",
+                            "est",
+                            "ly",
+                            "ness",
+                            "ment",
+                            "ful",
+                        ]
                         for ending in common_endings:
                             if word.endswith(ending) and not word.endswith("ing"):
                                 # Check if y was changed to i
-                                base_word = word[:-len(ending)]
+                                base_word = word[: -len(ending)]
                                 if base_word.endswith("y"):
                                     violations.append(token)
                                 break
@@ -189,7 +209,7 @@ class OrthographyValidator:
                     vowel_before_y = word[-2]
                     if vowel_before_y in "aeiou":
                         # Check if y was incorrectly changed to i
-                        if word.endswith("ies") or word.endswith("ied"):
+                        if word.endswith(("ies", "ied")):
                             violations.append(token)
 
         parse_result.rule_checks[RuleID.ORTHO_IV.value] = len(violations) == 0
@@ -222,13 +242,16 @@ class OrthographyValidator:
                 dropping_suffixes = ["able", "ous", "ive", "ful", "less"]
                 for suffix in dropping_suffixes:
                     if word.endswith(suffix):
-                        base_word = word[:-len(suffix)]
+                        base_word = word[: -len(suffix)]
                         if len(base_word) >= 2:
-                            # Check if final e should be retained after c or g
-                            if base_word.endswith(("c", "g")) and not base_word.endswith("e"):
-                                violations.append(token)
-                            # Check if final e should be dropped
-                            elif base_word.endswith("e") and not base_word.endswith(("c", "g")):
+                            # Check if final e should be retained after c or g, or dropped otherwise
+                            if (
+                                base_word.endswith(("c", "g"))
+                                and not base_word.endswith("e")
+                            ) or (
+                                base_word.endswith("e")
+                                and not base_word.endswith(("c", "g"))
+                            ):
                                 violations.append(token)
                         break
 
@@ -262,7 +285,7 @@ class OrthographyValidator:
                 vowel_suffixes = ["ing", "ed", "er", "est", "able", "ous", "ive"]
                 for suffix in vowel_suffixes:
                     if word.endswith(suffix):
-                        base_word = word[:-len(suffix)]
+                        base_word = word[: -len(suffix)]
                         if len(base_word) >= 2 and base_word.endswith("e"):
                             # Check if silent e was not dropped
                             if base_word.endswith("e"):

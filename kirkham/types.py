@@ -141,7 +141,9 @@ class RuleID(str, Enum):
 
     # Punctuation Rules
     COMMA_1 = "COMMA_1"  # Simple sentence members not separated by comma
-    COMMA_2 = "COMMA_2"  # Long simple sentence: comma before verb if nominative has adjunct
+    COMMA_2 = (
+        "COMMA_2"  # Long simple sentence: comma before verb if nominative has adjunct
+    )
     COMMA_3 = "COMMA_3"  # Interrupted simple sentence: set off adjuncts with commas
     COMMA_4 = "COMMA_4"  # Nominative independent and nouns in apposition take commas
     COMMA_5 = "COMMA_5"  # Absolute/participial/infinitive phrases set off by commas
@@ -159,7 +161,9 @@ class RuleID(str, Enum):
 
     PERIOD_RULE = "PERIOD_RULE"  # Complete independent sentence ends with period
     DASH_RULE = "DASH_RULE"  # Sudden breaks, significant pauses, unexpected turns
-    INTERROGATION_RULE = "INTERROGATION_RULE"  # Direct questions end with interrogation mark
+    INTERROGATION_RULE = (
+        "INTERROGATION_RULE"  # Direct questions end with interrogation mark
+    )
     EXCLAMATION_RULE = "EXCLAMATION_RULE"  # Strong emotion ends with exclamation mark
     APOSTROPHE_RULE = "APOSTROPHE_RULE"  # Apostrophe usage rules
     QUOTATION_RULE = "QUOTATION_RULE"  # Quotation mark usage rules
