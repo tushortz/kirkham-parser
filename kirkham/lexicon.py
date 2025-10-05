@@ -279,6 +279,40 @@ class Lexicon:
         }
     )
 
+    # Verbs that take bare infinitives (without 'to') - Rule 25
+    BARE_INFINITIVE_VERBS: set[str] = frozenset(
+        {
+            "bid",
+            "bids",
+            "bade",
+            "bidden",
+            "dare",
+            "dares",
+            "dared",
+            "need",
+            "needs",
+            "needed",
+            "make",
+            "makes",
+            "made",
+            "see",
+            "sees",
+            "saw",
+            "seen",
+            "hear",
+            "hears",
+            "heard",
+            "feel",
+            "feels",
+            "felt",
+            "help",
+            "helps",
+            "helped",
+            "let",
+            "lets",
+        }
+    )
+
     COMMON_NOUNS: set[str] = frozenset(
         {
             "cat",
@@ -444,6 +478,9 @@ class Lexicon:
     )
     intransitive_verbs: frozenset[str] = field(
         default_factory=lambda: Lexicon.COMMON_INTRANSITIVE_VERBS
+    )
+    bare_infinitive_verbs: frozenset[str] = field(
+        default_factory=lambda: Lexicon.BARE_INFINITIVE_VERBS
     )
     common_nouns: frozenset[str] = field(default_factory=lambda: Lexicon.COMMON_NOUNS)
     common_adjectives: frozenset[str] = field(

@@ -155,9 +155,11 @@ class TestKirkhamParser(unittest.TestCase):
         """Test that 'to + noun' is not detected as infinitive."""
         result = self.parser.parse("We walked to school.")
 
-        # Should NOT have K23 flag (infinitive without governing verb)
-        k23_flags = [f for f in result.flags if f.rule == RuleID.RULE_23]
-        assert len(k23_flags) == 0, "'to school' should not be detected as infinitive"
+        # Should NOT have infinitive-related flags
+        infinitive_flags = [f for f in result.flags if f.rule in [RuleID.RULE_25]]
+        assert (
+            len(infinitive_flags) == 0
+        ), "'to school' should not be detected as infinitive"
 
         # Also check directly
         infinitives = self.parser._syntactic_parser._find_infinitives(result.tokens)

@@ -10,7 +10,7 @@ import re
 
 from .lexicon import DEFAULT_LEXICON, Lexicon
 from .models import Token
-from .types import Case, Number, PartOfSpeech, Person
+from .types import Case, Gender, Number, PartOfSpeech, Person
 from .utils import TextUtils
 
 
@@ -66,13 +66,13 @@ class PartOfSpeechClassifier:
             return self._create_article_token(word, lemma, start, end)
 
         # Check pronouns
-        if lemma in self.lex.personal_pronouns:
-            return self._create_pronoun_token(word, lemma, start, end)
-
         if lemma in self.lex.possessive_pronouns or is_possessive:
             return self._create_possessive_token(
                 word, lemma, base, is_possessive, start, end
             )
+
+        if lemma in self.lex.personal_pronouns:
+            return self._create_pronoun_token(word, lemma, start, end)
 
         if lemma in self.lex.demonstrative_pronouns:
             return self._create_demonstrative_token(word, lemma, start, end)
@@ -179,8 +179,9 @@ class PartOfSpeechClassifier:
         self, word: str, lemma: str, start: int, end: int
     ) -> Token:
         """Create token for personal pronoun."""
-        # Determine person, number, and case
+        # Determine person, number, case, and gender
         person, number, case = self._analyze_pronoun(lemma)
+        gender = self._get_pronoun_gender(lemma)
 
         return Token(
             text=word,
@@ -191,6 +192,7 @@ class PartOfSpeechClassifier:
             person=person,
             number=number,
             case=case,
+            gender=gender,
             features={"pronoun_type": "personal"},
         )
 
@@ -205,6 +207,32 @@ class PartOfSpeechClassifier:
     ) -> Token:
         """Create token for possessive pronoun or noun."""
         if lemma in self.lex.possessive_pronouns:
+            # Determine gender and number for possessive pronouns
+            gender = Gender.NEUTER
+            number = Number.SINGULAR
+
+            if lemma in {"my", "mine"}:
+                gender = Gender.NEUTER  # First person - gender neutral
+                number = Number.SINGULAR
+            elif lemma in {"your", "yours"}:
+                gender = Gender.NEUTER  # Second person - gender neutral
+                number = Number.SINGULAR
+            elif lemma in {"his"}:
+                gender = Gender.MASCULINE
+                number = Number.SINGULAR
+            elif lemma in {"her", "hers"}:
+                gender = Gender.FEMININE
+                number = Number.SINGULAR
+            elif lemma in {"its"}:
+                gender = Gender.NEUTER
+                number = Number.SINGULAR
+            elif lemma in {"our", "ours"}:
+                gender = Gender.NEUTER  # First person plural - gender neutral
+                number = Number.PLURAL
+            elif lemma in {"their", "theirs"}:
+                gender = Gender.NEUTER  # Third person plural - gender neutral
+                number = Number.PLURAL
+
             return Token(
                 text=word,
                 lemma=lemma,
@@ -212,6 +240,9 @@ class PartOfSpeechClassifier:
                 start=start,
                 end=end,
                 case=Case.POSSESSIVE,
+                gender=gender,
+                number=number,
+                person=self._get_person_from_pronoun(lemma),
                 features={"pronoun_type": "possessive"},
             )
         # Possessive noun
@@ -224,6 +255,34 @@ class PartOfSpeechClassifier:
             case=Case.POSSESSIVE,
             features={"base": base},
         )
+
+    def _get_person_from_pronoun(self, lemma: str) -> Person:
+        """Determine person from pronoun lemma."""
+        if lemma in {"my", "mine", "our", "ours"}:
+            return Person.FIRST
+        elif lemma in {"your", "yours"}:
+            return Person.SECOND
+        elif lemma in {"his", "her", "hers", "its", "their", "theirs"}:
+            return Person.THIRD
+        else:
+            return Person.THIRD  # Default fallback
+
+    def _get_pronoun_gender(self, lemma: str) -> Gender:
+        """Determine gender from pronoun lemma."""
+        if lemma in {"i", "me", "we", "us", "my", "mine", "our", "ours"}:
+            return Gender.NEUTER  # First person - gender neutral
+        elif lemma in {"you", "ye", "your", "yours", "thou", "thee", "thy", "thine"}:
+            return Gender.NEUTER  # Second person - gender neutral
+        elif lemma in {"he", "him", "his"}:
+            return Gender.MASCULINE
+        elif lemma in {"she", "her", "hers"}:
+            return Gender.FEMININE
+        elif lemma in {"it", "its"}:
+            return Gender.NEUTER
+        elif lemma in {"they", "them", "their", "theirs"}:
+            return Gender.NEUTER  # Third person plural - gender neutral
+        else:
+            return Gender.NEUTER  # Default fallback
 
     def _create_demonstrative_token(
         self, word: str, lemma: str, start: int, end: int

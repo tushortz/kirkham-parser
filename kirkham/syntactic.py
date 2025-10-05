@@ -53,10 +53,14 @@ class SyntacticParser:
         self.config = config or DEFAULT_CONFIG
         self.lex = lexicon or DEFAULT_LEXICON
         self.classifier = PartOfSpeechClassifier(self.lex)
-        # Import validator here to avoid circular imports
+        # Import validators here to avoid circular imports
+        from .orthography import OrthographyValidator
+        from .punctuation import PunctuationValidator
         from .validator import GrammarRuleValidator
 
         self.validator = GrammarRuleValidator(self.config)
+        self.orthography_validator = OrthographyValidator(self.config)
+        self.punctuation_validator = PunctuationValidator(self.config)
 
     def _looks_adverb(self, token: Token) -> bool:
         """Check if token looks like an adverb (intensifier or modifier).
@@ -312,6 +316,12 @@ class SyntacticParser:
 
         # Validate grammar rules
         self.validator.validate(result)
+
+        # Validate orthography (spelling) rules
+        self.orthography_validator.validate(result)
+
+        # Validate punctuation rules
+        self.punctuation_validator.validate(result)
 
         return result
 

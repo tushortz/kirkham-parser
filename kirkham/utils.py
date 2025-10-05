@@ -31,7 +31,7 @@ class TextUtils:
 
     # Pre-compiled pattern for adjective suffix matching (micro-optimization)
     ADJECTIVE_SUFFIX_PATTERN = re.compile(
-        r"(ous|ive|ful|less|al|ary|able|ible|ic|ish|ent|ant)$", re.IGNORECASE
+        r"(ous|ive|ful|less|al|able|ible|ic|ish|ent|ant)$", re.IGNORECASE
     )
 
     # Cached set of irregular past participles (avoid repeated set creation)

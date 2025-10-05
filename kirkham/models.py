@@ -10,14 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .types import (
-    Case,
-    Gender,
-    Number,
-    PartOfSpeech,
-    Person,
-    RuleID,
-    SentenceType,
-    Tense,
+    Case, Gender, Number, PartOfSpeech, Person, RuleID, SentenceType, Tense,
     Voice,
 )
 
@@ -43,10 +36,47 @@ class ParserConfig:
     """
 
     # Rule enforcement
-    enforce_rule_20_strict: bool = True  # Transitive verbs require objects
-    enforce_rule_12_strict: bool = True  # Possessive governance
-    enforce_rule_4_strict: bool = True  # Subject-verb agreement
+    enforce_rule_1_strict: bool = True  # Article-noun agreement (a/an + singular)
+    enforce_rule_2_strict: bool = True  # Article-noun relationship (the + noun)
     enforce_rule_3_strict: bool = True  # Subject required for verb
+    enforce_rule_4_strict: bool = True  # Subject-verb agreement
+    enforce_rule_8_strict: bool = True  # Compound subject agreement
+    enforce_rule_12_strict: bool = True  # Possessive governance
+    enforce_rule_13_strict: bool = True  # Personal pronoun agreement
+    enforce_rule_18_strict: bool = True  # Adjective qualification
+    enforce_rule_19_strict: bool = True  # Adjective pronoun validation
+    enforce_rule_20_strict: bool = True  # Transitive verbs require objects
+    enforce_rule_21_strict: bool = True  # Copula case agreement
+    enforce_rule_25_strict: bool = True  # Bare infinitive detection
+    enforce_rule_28_strict: bool = True  # Perfect participle agreement
+    enforce_rule_29_strict: bool = True  # Adverb qualification
+    enforce_rule_30_strict: bool = True  # Preposition placement
+    enforce_rule_31_strict: bool = True  # Preposition object case
+
+    # Orthography (Spelling) Rules
+    enforce_ortho_rules: bool = True  # Enable orthography checking
+    enforce_ortho_i: bool = True  # Monosyllables ending in f, l, or s
+    enforce_ortho_ii: bool = True  # Polysyllables ending in f, l, or s
+    enforce_ortho_iii: bool = True  # Words ending in y after consonant
+    enforce_ortho_iv: bool = True  # Words ending in y after vowel
+    enforce_ortho_v: bool = True  # Suffixes -able, -ous
+    enforce_ortho_vi: bool = True  # Final silent e
+    enforce_ortho_vii: bool = True  # Additional derivative cases
+    enforce_ortho_viii: bool = True  # Additional derivative cases
+    enforce_ortho_ix: bool = True  # Additional derivative cases
+    enforce_ortho_x: bool = True  # Adding -ing or -ish
+
+    # Punctuation Rules
+    enforce_punctuation_rules: bool = True  # Enable punctuation checking
+    enforce_comma_rules: bool = True  # Enable comma rules
+    enforce_semicolon_rules: bool = True  # Enable semicolon rules
+    enforce_colon_rules: bool = True  # Enable colon rules
+    enforce_period_rules: bool = True  # Enable period rules
+    enforce_dash_rules: bool = True  # Enable dash rules
+    enforce_interrogation_rules: bool = True  # Enable interrogation rules
+    enforce_exclamation_rules: bool = True  # Enable exclamation rules
+    enforce_apostrophe_rules: bool = True  # Enable apostrophe rules
+    enforce_quotation_rules: bool = True  # Enable quotation rules
 
     # Feature toggles
     detect_get_passive: bool = True  # Get-passive constructions

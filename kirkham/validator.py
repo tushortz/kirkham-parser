@@ -8,12 +8,7 @@ from __future__ import annotations
 
 from .lexicon import Lexicon
 from .models import (
-    DEFAULT_CONFIG,
-    Flag,
-    ParserConfig,
-    ParseResult,
-    Span,
-    Token,
+    DEFAULT_CONFIG, Flag, ParserConfig, ParseResult, Span, Token,
 )
 from .types import Case, Number, PartOfSpeech, Person, RuleID, Voice
 
@@ -68,6 +63,40 @@ class GrammarRuleValidator:
                 "encourage",
                 "encourages",
                 "encouraged",
+            }
+        )
+
+        # Verbs that take bare infinitives (Rule 25)
+        self.bare_inf_verbs = frozenset(
+            {
+                "bid",
+                "bids",
+                "bade",
+                "bidden",
+                "dare",
+                "dares",
+                "dared",
+                "need",
+                "needs",
+                "needed",
+                "make",
+                "makes",
+                "made",
+                "see",
+                "sees",
+                "saw",
+                "seen",
+                "hear",
+                "hears",
+                "heard",
+                "feel",
+                "feels",
+                "felt",
+                "help",
+                "helps",
+                "helped",
+                "let",
+                "lets",
             }
         )
 
@@ -127,6 +156,14 @@ class GrammarRuleValidator:
             parse_result: ParseResult object to validate
 
         """
+        # RULE 1: A/an agrees with its noun in the singular only (if enabled)
+        if self.config.enforce_rule_1_strict:
+            self._check_rule_1(parse_result)
+
+        # RULE 2: The belongs to nouns to limit/define their meaning (if enabled)
+        if self.config.enforce_rule_2_strict:
+            self._check_rule_2(parse_result)
+
         # RULE 3: The nominative case governs the verb (if enabled)
         if self.config.enforce_rule_3_strict:
             self._check_rule_3(parse_result)
@@ -135,17 +172,49 @@ class GrammarRuleValidator:
         if self.config.enforce_rule_4_strict:
             self._check_rule_4(parse_result)
 
+        # RULE 8: Compound subjects need plural verb/pronoun (if enabled)
+        if self.config.enforce_rule_8_strict:
+            self._check_rule_8(parse_result)
+
         # RULE 12: Possessive case governed by noun it possesses (if enabled)
         if self.config.enforce_rule_12_strict:
             self._check_rule_12(parse_result)
+
+        # RULE 13: Personal pronouns agree with their nouns in gender and number (if enabled)
+        if self.config.enforce_rule_13_strict:
+            self._check_rule_13(parse_result)
 
         # RULE 18: Adjectives belong to and qualify nouns (always checked if extended validation enabled)
         if self.config.enable_extended_validation:
             self._check_rule_18(parse_result)
 
+        # RULE 19: Adjective pronouns belong to nouns (if enabled)
+        if self.config.enforce_rule_19_strict:
+            self._check_rule_19(parse_result)
+
         # RULE 20: Active-transitive verbs govern the objective case (if enabled)
         if self.config.enforce_rule_20_strict:
             self._check_rule_20(parse_result)
+
+        # RULE 21: To be admits the same case after it as before it (if enabled)
+        if self.config.enforce_rule_21_strict:
+            self._check_rule_21(parse_result)
+
+        # RULE 25: Bare infinitive after certain verbs (if enabled)
+        if self.config.enforce_rule_25_strict:
+            self._check_rule_25(parse_result)
+
+        # RULE 28: Perfect participle belongs to noun/pronoun (if enabled)
+        if self.config.enforce_rule_28_strict:
+            self._check_rule_28(parse_result)
+
+        # RULE 29: Adverbs qualify verbs, participles, adjectives, and other adverbs (if enabled)
+        if self.config.enforce_rule_29_strict:
+            self._check_rule_29(parse_result)
+
+        # RULE 30: Prepositions are generally placed before the case they govern (if enabled)
+        if self.config.enforce_rule_30_strict:
+            self._check_rule_30(parse_result)
 
         # RULE 31: Prepositions govern the objective case (always checked if extended validation enabled)
         if self.config.enable_extended_validation:
@@ -156,6 +225,73 @@ class GrammarRuleValidator:
             self._check_prep_object_case(parse_result)
             self._check_copula_predicative_case(parse_result)
             self._check_governed_infinitives(parse_result)
+
+    def _check_rule_1(self, parse_result: ParseResult) -> None:
+        """RULE 1: A/an agrees with its noun in the singular only.
+        Articles 'a' and 'an' should only be used with singular nouns.
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.text.lower() in {"a", "an"} and token.pos == PartOfSpeech.ARTICLE:
+                # Look for the following noun
+                j = i + 1
+                while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
+                    PartOfSpeech.ADJECTIVE,
+                    PartOfSpeech.ADVERB,
+                }:
+                    j += 1
+
+                if j < len(parse_result.tokens):
+                    next_token = parse_result.tokens[j]
+                    if next_token.pos == PartOfSpeech.NOUN:
+                        # Check if noun is plural
+                        if next_token.number == Number.PLURAL:
+                            violations.append((token, next_token))
+
+        parse_result.rule_checks[RuleID.RULE_1.value] = len(violations) == 0
+
+        for article_token, noun_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_1,
+                    message=f"Article '{article_token.text}' should only be used with singular nouns, not '{noun_token.text}'",
+                    span=Span(article_token.start, noun_token.end),
+                )
+            )
+
+    def _check_rule_2(self, parse_result: ParseResult) -> None:
+        """RULE 2: The belongs to nouns to limit/define their meaning.
+        The article 'the' should be followed by a noun (singular or plural).
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.text.lower() == "the" and token.pos == PartOfSpeech.ARTICLE:
+                # Look for the following noun
+                j = i + 1
+                while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
+                    PartOfSpeech.ADJECTIVE,
+                    PartOfSpeech.ADVERB,
+                }:
+                    j += 1
+
+                if (
+                    j >= len(parse_result.tokens)
+                    or parse_result.tokens[j].pos != PartOfSpeech.NOUN
+                ):
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_2.value] = len(violations) == 0
+
+        for article_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_2,
+                    message="Article 'the' should be followed by a noun",
+                    span=Span(article_token.start, article_token.end),
+                )
+            )
 
     def _check_rule_3(self, parse_result: ParseResult) -> None:
         """RULE 3: The nominative case governs the verb.
@@ -461,3 +597,294 @@ class GrammarRuleValidator:
                         Span(subj.start, subj.end),
                     )
                 )
+
+    def _check_rule_8(self, parse_result: ParseResult) -> None:
+        """RULE 8: Two or more singular nouns joined by a copulative need a plural verb/pronoun.
+        Compound subjects connected by "and" should take plural verbs.
+        """
+        if not parse_result.subject or not parse_result.verb_phrase:
+            parse_result.rule_checks[RuleID.RULE_8.value] = True
+            return
+
+        # Check if subject contains multiple nouns connected by "and"
+        subject_tokens = parse_result.subject.tokens
+        has_and = any(token.text.lower() == "and" for token in subject_tokens)
+
+        if has_and:
+            # Count nouns in subject
+            noun_count = sum(
+                1 for token in subject_tokens if token.pos == PartOfSpeech.NOUN
+            )
+
+            if noun_count >= 2:
+                # Check if verb is plural
+                verb_token = self._finite_verb_of_vp(parse_result.verb_phrase)
+                is_plural_verb = verb_token.number == Number.PLURAL
+
+                parse_result.rule_checks[RuleID.RULE_8.value] = is_plural_verb
+
+                if not is_plural_verb:
+                    parse_result.flags.append(
+                        Flag(
+                            rule=RuleID.RULE_8,
+                            message=f"Compound subject requires plural verb, not '{verb_token.text}'",
+                            span=Span(verb_token.start, verb_token.end),
+                        )
+                    )
+            else:
+                parse_result.rule_checks[RuleID.RULE_8.value] = True
+        else:
+            parse_result.rule_checks[RuleID.RULE_8.value] = True
+
+    def _check_rule_13(self, parse_result: ParseResult) -> None:
+        """RULE 13: Personal pronouns agree with their nouns in gender and number.
+        Pronouns should match their antecedents in gender and number.
+        """
+        violations = []
+
+        # Simple check: pronouns should have consistent gender/number features
+        for token in parse_result.tokens:
+            if token.pos == PartOfSpeech.PRONOUN:
+                # Check if pronoun has proper gender/number attributes
+                if not token.gender or not token.number:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_13.value] = len(violations) == 0
+
+        for pronoun_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_13,
+                    message=f"Personal pronoun '{pronoun_token.text}' should have clear gender and number",
+                    span=Span(pronoun_token.start, pronoun_token.end),
+                )
+            )
+
+    def _check_rule_19(self, parse_result: ParseResult) -> None:
+        """RULE 19: Adjective pronouns belong to nouns (expressed or understood).
+        Adjective pronouns (my, your, his, etc.) should modify nouns.
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.PRONOUN and token.features.get("possessive"):
+                # Look for following noun
+                j = i + 1
+                while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
+                    PartOfSpeech.ADJECTIVE,
+                    PartOfSpeech.ADVERB,
+                }:
+                    j += 1
+
+                if (
+                    j >= len(parse_result.tokens)
+                    or parse_result.tokens[j].pos != PartOfSpeech.NOUN
+                ):
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_19.value] = len(violations) == 0
+
+        for pronoun_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_19,
+                    message=f"Possessive pronoun '{pronoun_token.text}' should be followed by a noun",
+                    span=Span(pronoun_token.start, pronoun_token.end),
+                )
+            )
+
+    def _check_rule_21(self, parse_result: ParseResult) -> None:
+        """RULE 21: To be admits the same case after it as before it.
+        Enhanced copula case agreement checking.
+        """
+        if not parse_result.verb_phrase:
+            parse_result.rule_checks[RuleID.RULE_21.value] = True
+            return
+
+        # Check if verb phrase contains 'be' forms
+        has_be = any(
+            token.features.get("auxiliary") == "be"
+            for token in parse_result.verb_phrase.tokens
+        )
+
+        if has_be and parse_result.subject:
+            # Find the complement after the verb
+            vp_end_idx = parse_result.tokens.index(parse_result.verb_phrase.tokens[-1])
+            complement_start = vp_end_idx + 1
+
+            if complement_start < len(parse_result.tokens):
+                complement_token = parse_result.tokens[complement_start]
+
+                if complement_token.pos == PartOfSpeech.PRONOUN:
+                    subject_case = parse_result.subject.tokens[0].case
+                    complement_case = complement_token.case
+
+                    # In formal English, cases should match
+                    if (
+                        not self.config.allow_informal_pronouns
+                        and subject_case is not None
+                        and complement_case is not None
+                        and subject_case != complement_case
+                    ):
+                        parse_result.flags.append(
+                            Flag(
+                                rule=RuleID.RULE_21,
+                                message=f"After 'to be', use same case as subject; found '{complement_token.text}' (should be {subject_case.value})",
+                                span=Span(complement_token.start, complement_token.end),
+                            )
+                        )
+                        parse_result.rule_checks[RuleID.RULE_21.value] = False
+                        return
+
+        parse_result.rule_checks[RuleID.RULE_21.value] = True
+
+    def _check_rule_25(self, parse_result: ParseResult) -> None:
+        """RULE 25: After bid, dare, need, make, see, hear, feel, help, let, the following verb is infinitive without to.
+        Certain verbs take bare infinitives (without 'to').
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.VERB and token.lemma in self.bare_inf_verbs:
+                # Look for 'to' + verb pattern that should be bare infinitive
+                j = i + 1
+                while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
+                    PartOfSpeech.ADVERB,
+                    PartOfSpeech.ARTICLE,
+                    PartOfSpeech.PRONOUN,
+                }:
+                    j += 1
+
+                if j < len(parse_result.tokens) and (
+                    parse_result.tokens[j].text.lower() == "to"
+                    and parse_result.tokens[j].pos == PartOfSpeech.PREPOSITION
+                ):
+                    k = j + 1
+                    while k < len(parse_result.tokens) and parse_result.tokens[
+                        k
+                    ].pos in {PartOfSpeech.ADVERB, PartOfSpeech.ARTICLE}:
+                        k += 1
+
+                    if (
+                        k < len(parse_result.tokens)
+                        and parse_result.tokens[k].pos == PartOfSpeech.VERB
+                    ):
+                        violations.append(
+                            (token, parse_result.tokens[j], parse_result.tokens[k])
+                        )
+
+        parse_result.rule_checks[RuleID.RULE_25.value] = len(violations) == 0
+
+        for main_verb, to_token, infinitive_verb in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_25,
+                    message=f"After '{main_verb.text}', use bare infinitive without 'to': '{infinitive_verb.text}'",
+                    span=Span(to_token.start, infinitive_verb.end),
+                )
+            )
+
+    def _check_rule_28(self, parse_result: ParseResult) -> None:
+        """RULE 28: The perfect participle belongs, like an adjective, to some noun/pronoun.
+        Perfect participles (having + past participle) should modify nouns/pronouns.
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.features.get("participle") == "perfect":
+                # Look for following noun/pronoun
+                j = i + 1
+                while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
+                    PartOfSpeech.ADJECTIVE,
+                    PartOfSpeech.ADVERB,
+                }:
+                    j += 1
+
+                if j >= len(parse_result.tokens) or parse_result.tokens[j].pos not in {
+                    PartOfSpeech.NOUN,
+                    PartOfSpeech.PRONOUN,
+                }:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_28.value] = len(violations) == 0
+
+        for participle_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_28,
+                    message=f"Perfect participle '{participle_token.text}' should modify a noun or pronoun",
+                    span=Span(participle_token.start, participle_token.end),
+                )
+            )
+
+    def _check_rule_29(self, parse_result: ParseResult) -> None:
+        """RULE 29: Adverbs qualify verbs, participles, adjectives, and other adverbs.
+        Adverbs should modify appropriate parts of speech.
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.ADVERB:
+                # Check if adverb has a valid target
+                has_target = False
+
+                # Look for targets before and after
+                for j in range(max(0, i - 3), min(len(parse_result.tokens), i + 4)):
+                    if j != i:
+                        target_token = parse_result.tokens[j]
+                        if target_token.pos in {
+                            PartOfSpeech.VERB,
+                            PartOfSpeech.PARTICIPLE,
+                            PartOfSpeech.ADJECTIVE,
+                            PartOfSpeech.ADVERB,
+                        }:
+                            has_target = True
+                            break
+
+                if not has_target:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_29.value] = len(violations) == 0
+
+        for adverb_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_29,
+                    message=f"Adverb '{adverb_token.text}' should modify a verb, participle, adjective, or another adverb",
+                    span=Span(adverb_token.start, adverb_token.end),
+                )
+            )
+
+    def _check_rule_30(self, parse_result: ParseResult) -> None:
+        """RULE 30: Prepositions are generally placed before the case they govern.
+        Prepositions should come before their objects.
+        """
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.PREPOSITION:
+                # Check if preposition is followed by its object
+                j = i + 1
+                while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
+                    PartOfSpeech.ADJECTIVE,
+                    PartOfSpeech.ADVERB,
+                    PartOfSpeech.ARTICLE,
+                }:
+                    j += 1
+
+                if j >= len(parse_result.tokens) or parse_result.tokens[j].pos not in {
+                    PartOfSpeech.NOUN,
+                    PartOfSpeech.PRONOUN,
+                }:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_30.value] = len(violations) == 0
+
+        for prep_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_30,
+                    message=f"Preposition '{prep_token.text}' should be followed by its object",
+                    span=Span(prep_token.start, prep_token.end),
+                )
+            )
