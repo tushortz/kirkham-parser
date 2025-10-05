@@ -8,7 +8,12 @@ from __future__ import annotations
 
 from .lexicon import Lexicon
 from .models import (
-    DEFAULT_CONFIG, Flag, ParserConfig, ParseResult, Span, Token,
+    DEFAULT_CONFIG,
+    Flag,
+    ParserConfig,
+    ParseResult,
+    Span,
+    Token,
 )
 from .types import Case, Number, PartOfSpeech, Person, RuleID, Voice
 
