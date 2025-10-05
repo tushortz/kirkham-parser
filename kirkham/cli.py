@@ -24,7 +24,8 @@ from kirkham.parser import KirkhamParser, ParserConfig, ParseResult
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="English Grammar Parser - Analyze English sentences based on Kirkham's Grammar",
+        description="English Grammar Parser - Analyze English sentences "
+        "based on Kirkham's Grammar",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -256,7 +257,8 @@ def output_errors_only(results: list[ParseResult]) -> None:
             total_errors += 1
             if flag.span:
                 print(
-                    f"  [{flag.rule.value}] {flag.message} (at {flag.span.start}:{flag.span.end})"
+                    f"  [{flag.rule.value}] {flag.message} "
+                    f"(at {flag.span.start}:{flag.span.end})"
                 )
             else:
                 print(f"  [{flag.rule.value}] {flag.message}")
@@ -310,7 +312,8 @@ def output_statistics(results: list[ParseResult]) -> None:
     print("\nGrammar issues:")
     print(f"  Total issues: {total_flags}")
     print(
-        f"  Sentences with issues: {sentences_with_errors} ({sentences_with_errors/total*100:.1f}%)"
+        f"  Sentences with issues: {sentences_with_errors} "
+        f"({sentences_with_errors/total*100:.1f}%)"
     )
 
     # Average sentence length

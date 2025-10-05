@@ -19,7 +19,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from kirkham.parser import (
+from kirkham import (
     KirkhamParser,
     ParserConfig,
     PartOfSpeech,

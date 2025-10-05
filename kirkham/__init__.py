@@ -19,29 +19,30 @@ Example:
 
 """
 
-from .parser import (
+from .lexicon import Lexicon
+from .models import (
     DEFAULT_CONFIG,
-    DEFAULT_LEXICON,
-    Case,
     Flag,
-    Gender,
-    KirkhamParser,
-    Lexicon,
-    Number,
     ParserConfig,
     ParseResult,
+    Phrase,
+    Span,
+    Token,
+)
+from .parser import KirkhamParser
+from .types import (
+    Case,
+    Gender,
+    Number,
     PartOfSpeech,
     Person,
-    Phrase,
     RuleID,
     SentenceType,
-    Span,
     Tense,
-    Token,
     Voice,
 )
 
-__version__ = "1.0.0"
+__version__ = "0.0.1"
 __author__ = "Kirkham Grammar Parser"
 __email__ = "parser@kirkham.dev"
 
@@ -67,5 +68,4 @@ __all__ = [
     "RuleID",
     # Defaults
     "DEFAULT_CONFIG",
-    "DEFAULT_LEXICON",
 ]

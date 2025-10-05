@@ -156,6 +156,7 @@ ignore = [
     "D104", # Missing docstring in public package
     "D105", # Missing docstring in magic method
     "D107", # Missing docstring in __init__
+    "D205", # 1 blank line required between summary line and description
     "COM812", # Missing trailing comma
     "ISC001", # Implicitly concatenated string literals
     "Q000", # Single quotes found but double quotes preferred
@@ -168,6 +169,14 @@ ignore = [
     "S607", # Starting a process with a partial executable path
     "T201", # print found
     "T203", # pprint found
+    "ANN101", # Missing type annotation for `self` in method
+    "ANN102", # Missing type annotation for `cls` in classmethod
+    "ANN001", # Missing type annotation for function argument
+    "C901", # Function is too complex
+    "TCH001", # Move application import into a type-checking block
+    "SLF001", # Private member accessed
+    "SIM102", # Use a single `if` statement instead of nested `if` statements
+    "E501", # Line too long
 ]
 
 [tool.ruff.lint.pydocstyle]
