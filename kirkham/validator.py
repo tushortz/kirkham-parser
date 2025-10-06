@@ -273,6 +273,28 @@ class GrammarRuleValidator:
 
         for i, token in enumerate(parse_result.tokens):
             if token.text.lower() == "the" and token.pos == PartOfSpeech.ARTICLE:
+                # Check if immediately followed by comparative adjective/adverb
+                if i + 1 < len(parse_result.tokens):
+                    next_token = parse_result.tokens[i + 1]
+                    if next_token.pos in {
+                        PartOfSpeech.ADJECTIVE,
+                        PartOfSpeech.ADVERB,
+                    } and next_token.lemma in {
+                        "more",
+                        "most",
+                        "better",
+                        "best",
+                        "worse",
+                        "worst",
+                        "less",
+                        "least",
+                        "further",
+                        "furthest",
+                        "farther",
+                        "farthest",
+                    }:
+                        continue  # Valid comparative construction
+
                 # Look for the following noun
                 j = i + 1
                 while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {
@@ -281,10 +303,15 @@ class GrammarRuleValidator:
                 }:
                     j += 1
 
-                if (
-                    j >= len(parse_result.tokens)
-                    or parse_result.tokens[j].pos != PartOfSpeech.NOUN
-                ):
+                # Check if we have a valid construction
+                is_valid = False
+                if j < len(parse_result.tokens):
+                    next_token = parse_result.tokens[j]
+                    # Valid if followed by noun
+                    if next_token.pos == PartOfSpeech.NOUN:
+                        is_valid = True
+
+                if not is_valid:
                     violations.append(token)
 
         parse_result.rule_checks[RuleID.RULE_2.value] = len(violations) == 0
@@ -471,14 +498,103 @@ class GrammarRuleValidator:
                     }:
                         break
 
-                # Check if preceded by "to be" verb (predicative use)
+                # Check if preceded by linking verb (predicative use)
                 is_predicative = False
-                if i > 0:
-                    prev_token = parse_result.tokens[i - 1]
-                    if (
-                        prev_token.pos == PartOfSpeech.VERB
-                        and prev_token.lemma in Lexicon.AUXILIARY_BE
-                    ):
+                # Look backwards for linking verbs, skipping articles, adverbs, and adjectives
+                for j in range(i - 1, -1, -1):
+                    token_j = parse_result.tokens[j]
+                    if token_j.pos == PartOfSpeech.VERB:
+                        # Check for "to be" verbs or other linking verbs
+                        if token_j.lemma in Lexicon.AUXILIARY_BE or token_j.lemma in {
+                            "prove",
+                            "proves",
+                            "proved",
+                            "become",
+                            "becomes",
+                            "became",
+                            "seem",
+                            "seems",
+                            "seemed",
+                            "appear",
+                            "appears",
+                            "appeared",
+                            "look",
+                            "looks",
+                            "looked",
+                            "feel",
+                            "feels",
+                            "felt",
+                            "sound",
+                            "sounds",
+                            "sounded",
+                            "taste",
+                            "tastes",
+                            "tasted",
+                            "smell",
+                            "smells",
+                            "smelled",
+                            "grow",
+                            "grows",
+                            "grew",
+                            "turn",
+                            "turns",
+                            "turned",
+                            "remain",
+                            "remains",
+                            "remained",
+                            "stay",
+                            "stays",
+                            "stayed",
+                            "keep",
+                            "keeps",
+                            "kept",
+                        }:
+                            is_predicative = True
+                            break
+                    # Stop if we hit a non-auxiliary word that's not an article, adverb, adjective, punctuation, or preposition
+                    if token_j.pos not in {
+                        PartOfSpeech.ARTICLE,
+                        PartOfSpeech.ADVERB,
+                        PartOfSpeech.ADJECTIVE,
+                        PartOfSpeech.PUNCTUATION,
+                        PartOfSpeech.PREPOSITION,
+                    }:
+                        break
+
+                # Also check for ellipsis cases (implied "to be" verbs)
+                # Look for patterns like "X, and Y [adjective]" where Y is a noun
+                if not is_predicative and i > 2:
+                    # Look backwards for comma-conjunction-noun pattern
+                    found_comma = False
+                    found_conjunction = False
+                    found_noun = False
+                    for j in range(i - 1, -1, -1):
+                        token_j = parse_result.tokens[j]
+                        if not found_noun and token_j.pos == PartOfSpeech.NOUN:
+                            found_noun = True
+                        elif (
+                            found_noun
+                            and not found_conjunction
+                            and token_j.pos == PartOfSpeech.CONJUNCTION
+                            and token_j.lemma in {"and", "but", "or"}
+                        ):
+                            found_conjunction = True
+                        elif (
+                            found_conjunction
+                            and not found_comma
+                            and token_j.pos == PartOfSpeech.PUNCTUATION
+                            and token_j.text == ","
+                        ):
+                            found_comma = True
+                            break
+                        elif token_j.pos not in {
+                            PartOfSpeech.ARTICLE,
+                            PartOfSpeech.ADVERB,
+                            PartOfSpeech.ADJECTIVE,
+                        }:
+                            break
+
+                    if found_comma and found_conjunction and found_noun:
                         is_predicative = True
 
                 # Skip if adjective is predicative (after "to be") or has a following noun
@@ -535,6 +651,12 @@ class GrammarRuleValidator:
         """
         for i, token in enumerate(parse_result.tokens):
             if token.pos == PartOfSpeech.PREPOSITION:
+                # Skip infinitive "to" constructions (to + verb)
+                if token.text.lower() == "to" and i + 1 < len(parse_result.tokens):
+                    next_token = parse_result.tokens[i + 1]
+                    if next_token.pos == PartOfSpeech.VERB:
+                        continue  # Valid infinitive construction
+
                 # Look for following noun/pronoun
                 found_object = False
                 for j in range(i + 1, min(i + 4, len(parse_result.tokens))):
@@ -930,6 +1052,12 @@ class GrammarRuleValidator:
 
         for i, token in enumerate(parse_result.tokens):
             if token.pos == PartOfSpeech.PREPOSITION:
+                # Skip infinitive "to" constructions (to + verb)
+                if token.text.lower() == "to" and i + 1 < len(parse_result.tokens):
+                    next_token = parse_result.tokens[i + 1]
+                    if next_token.pos == PartOfSpeech.VERB:
+                        continue  # Valid infinitive construction
+
                 # Check if preposition is followed by its object
                 j = i + 1
                 while j < len(parse_result.tokens) and parse_result.tokens[j].pos in {

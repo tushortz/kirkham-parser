@@ -87,8 +87,12 @@ class PartOfSpeechClassifier:
         ):
             return self._create_conjunction_token(word, lemma, start, end)
 
-        # Check prepositions
+        # Check prepositions (but consider context for ambiguous words)
         if lemma in self.lex.prepositions:
+            # Special handling for ambiguous words that can be prepositions or other POS
+            if lemma == "like" and self._is_like_noun_context(context):
+                # "like" as noun (e.g., "its like", "my like", "the like")
+                return self._create_noun_token(word, lemma, is_possessive, start, end)
             return self._create_preposition_token(word, lemma, start, end)
 
         # Check interjections
@@ -96,7 +100,12 @@ class PartOfSpeechClassifier:
             return self._create_interjection_token(word, lemma, start, end)
 
         # Check verbs (with higher priority for explicit verb forms)
+        # But consider context for ambiguous words that can be verbs or nouns
         if self._is_verb(lemma):
+            # Special handling for ambiguous words that can be verbs or nouns
+            if lemma == "work" and self._is_work_noun_context(context):
+                # "work" as noun (e.g., "the work", "my work", "hard work")
+                return self._create_noun_token(word, lemma, is_possessive, start, end)
             return self._create_verb_token(word, lemma, start, end)
 
         # Check adverbs
@@ -105,6 +114,10 @@ class PartOfSpeechClassifier:
 
         # Check explicit adjectives list first
         if lemma in self.lex.common_adjectives:
+            # Special handling for ambiguous words that can be adjectives or nouns
+            if lemma == "wrong" and self._is_wrong_noun_context(context):
+                # "wrong" as noun (e.g., "the wrong", "my wrong")
+                return self._create_noun_token(word, lemma, is_possessive, start, end)
             return self._create_adjective_token(word, lemma, start, end)
 
         # Check explicit nouns list
@@ -481,3 +494,142 @@ class PartOfSpeechClassifier:
 
         # Default
         return Person.THIRD, Number.SINGULAR, Case.NOMINATIVE
+
+    def _is_like_noun_context(self, context: list[str] | None) -> bool:
+        """Check if 'like' should be classified as a noun based on context.
+
+        Args:
+            context: List of surrounding words for context analysis
+
+        Returns:
+            True if 'like' should be a noun, False if it should be a preposition
+        """
+        if not context:
+            return False
+
+        # Check if preceded by possessive pronouns or determiners
+        possessive_contexts = {
+            "my",
+            "your",
+            "his",
+            "her",
+            "its",
+            "our",
+            "their",
+            "mine",
+            "yours",
+            "hers",
+            "ours",
+            "theirs",
+            "the",
+            "a",
+            "an",
+            "this",
+            "that",
+            "these",
+            "those",
+        }
+
+        # Look at the word immediately before "like"
+        for i, word in enumerate(context):
+            if word.lower() == "like" and i > 0:
+                prev_word = context[i - 1].lower()
+                if prev_word in possessive_contexts:
+                    return True
+
+        return False
+
+    def _is_work_noun_context(self, context: list[str] | None) -> bool:
+        """Check if 'work' should be classified as a noun based on context.
+
+        Args:
+            context: List of surrounding words for context analysis
+
+        Returns:
+            True if 'work' should be a noun, False if it should be a verb
+        """
+        if not context:
+            return False
+
+        # Check if preceded by articles, possessive pronouns, or adjectives
+        noun_contexts = {
+            "the",
+            "a",
+            "an",
+            "this",
+            "that",
+            "these",
+            "those",
+            "my",
+            "your",
+            "his",
+            "her",
+            "its",
+            "our",
+            "their",
+            "mine",
+            "yours",
+            "hers",
+            "ours",
+            "theirs",
+            "hard",
+            "good",
+            "bad",
+            "great",
+            "important",
+            "difficult",
+            "easy",
+        }
+
+        # Look at the word immediately before "work"
+        for i, word in enumerate(context):
+            if word.lower() == "work" and i > 0:
+                prev_word = context[i - 1].lower()
+                if prev_word in noun_contexts:
+                    return True
+
+        return False
+
+    def _is_wrong_noun_context(self, context: list[str] | None) -> bool:
+        """Check if 'wrong' should be classified as a noun based on context.
+
+        Args:
+            context: List of surrounding words for context analysis
+
+        Returns:
+            True if 'wrong' should be a noun, False if it should be an adjective
+        """
+        if not context:
+            return False
+
+        # Check if preceded by articles or possessive pronouns
+        noun_contexts = {
+            "the",
+            "a",
+            "an",
+            "this",
+            "that",
+            "these",
+            "those",
+            "my",
+            "your",
+            "his",
+            "her",
+            "its",
+            "our",
+            "their",
+            "mine",
+            "yours",
+            "hers",
+            "ours",
+            "theirs",
+        }
+
+        # Look at the word immediately before "wrong"
+        for i, word in enumerate(context):
+            if word.lower() == "wrong" and i > 0:
+                prev_word = context[i - 1].lower()
+                if prev_word in noun_contexts:
+                    return True
+
+        return False

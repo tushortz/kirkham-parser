@@ -216,8 +216,8 @@ class OutputFormatter:
         """
         lines = []
         lines.append("PARSE STRUCTURE")
-        # Reconstruct sentence from tokens
-        sentence = "".join(token.text + " " for token in parse_result.tokens).strip()
+        # Reconstruct sentence from tokens with proper spacing
+        sentence = _reconstruct_text_from_tokens(parse_result.tokens)
         lines.append(f"Sentence: {sentence}")
         lines.append(
             f"Voice: {parse_result.voice.value if parse_result.voice else 'Unknown'}"
@@ -274,3 +274,45 @@ class OutputFormatter:
                 lines.append(f"  {warning}")
 
         return "\n".join(lines)
+
+
+def _reconstruct_text_from_tokens(tokens: list) -> str:
+    """Reconstruct text from tokens, preserving original spacing.
+
+    Args:
+        tokens: List of tokens with start/end positions
+
+    Returns:
+        Properly spaced text string
+    """
+    if not tokens:
+        return ""
+
+    # Sort tokens by start position to ensure correct order
+    sorted_tokens = sorted(tokens, key=lambda t: t.start)
+
+    # Reconstruct text by joining tokens with appropriate spacing
+    result = []
+    for i, token in enumerate(sorted_tokens):
+        if i == 0:
+            result.append(token.text)
+        else:
+            prev_token = sorted_tokens[i - 1]
+            # Check if there should be a space between tokens
+            # No space before punctuation, space before other tokens
+            if token.text in {
+                ",",
+                ".",
+                ";",
+                ":",
+                "!",
+                "?",
+                ")",
+                "]",
+                "}",
+            } or prev_token.text in {"(", "[", "{"}:
+                result.append(token.text)
+            else:
+                result.append(" " + token.text)
+
+    return "".join(result)

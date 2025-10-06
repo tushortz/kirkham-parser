@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kirkham"
-version = "0.0.2"
+version = "0.0.3"
 description = "English Grammar Parser based on Samuel Kirkham's English Grammar (1829)"
 authors = ["Taiwo Kareem <taiwo.kareem36@gmail.com>"]
 maintainers = ["Taiwo Kareem <taiwo.kareem36@gmail.com>"]
@@ -177,6 +177,9 @@ ignore = [
     "SLF001", # Private member accessed
     "SIM102", # Use a single `if` statement instead of nested `if` statements
     "E501", # Line too long
+    "PT009", # Use a regular `assert` instead of unittest-style assertions (we use unittest framework)
+    "F401", # Imported but unused (common in test files for testing imports)
+    "B007", # Loop control variable not used within loop body (common in test loops)
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -187,7 +190,7 @@ known-first-party = ["kirkham"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*" = ["S101", "PLR2004", "ANN001"]
+"tests/*" = ["S101", "PLR2004", "ANN001", "PT009", "F401", "B007"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -206,6 +209,7 @@ omit = [
     "*/__pycache__/*",
     "*/venv/*",
     "*/env/*",
+    "*/cli.py",
 ]
 
 [tool.coverage.report]

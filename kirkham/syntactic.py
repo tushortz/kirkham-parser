@@ -276,8 +276,9 @@ class SyntacticParser:
         """
         # Tokenize and classify (with character offsets)
         word_tokens = TextUtils.tokenize(sentence)
+        words = [word for word, _, _ in word_tokens]
         tokens = [
-            self.classifier.classify(word, start, end)
+            self.classifier.classify(word, start, end, context=words)
             for word, start, end in word_tokens
         ]
 

@@ -18,6 +18,7 @@ import argparse
 import json
 import sys
 
+from kirkham.models import Token
 from kirkham.parser import KirkhamParser, ParserConfig, ParseResult
 
 
@@ -192,8 +193,8 @@ def output_summary(results: list[ParseResult]) -> None:
             print(f"Sentence {i}:")
             print(f"{'='*70}")
 
-        # Show basic parse
-        text = " ".join(t.text for t in result.tokens)
+        # Show basic parse - reconstruct text properly without extra spaces
+        text = _reconstruct_text_from_tokens(result.tokens)
         print(f"Text: {text}")
 
         if result.sentence_type:
@@ -319,6 +320,48 @@ def output_statistics(results: list[ParseResult]) -> None:
     # Average sentence length
     avg_length = sum(len(r.tokens) for r in results) / total
     print(f"\nAverage sentence length: {avg_length:.1f} tokens")
+
+
+def _reconstruct_text_from_tokens(tokens: list[Token]) -> str:
+    """Reconstruct text from tokens, preserving original spacing.
+
+    Args:
+        tokens: List of tokens with start/end positions
+
+    Returns:
+        Properly spaced text string
+    """
+    if not tokens:
+        return ""
+
+    # Sort tokens by start position to ensure correct order
+    sorted_tokens = sorted(tokens, key=lambda t: t.start)
+
+    # Reconstruct text by joining tokens with appropriate spacing
+    result = []
+    for i, token in enumerate(sorted_tokens):
+        if i == 0:
+            result.append(token.text)
+        else:
+            prev_token = sorted_tokens[i - 1]
+            # Check if there should be a space between tokens
+            # No space before punctuation, space before other tokens
+            if token.text in {
+                ",",
+                ".",
+                ";",
+                ":",
+                "!",
+                "?",
+                ")",
+                "]",
+                "}",
+            } or prev_token.text in {"(", "[", "{"}:
+                result.append(token.text)
+            else:
+                result.append(" " + token.text)
+
+    return "".join(result)
 
 
 if __name__ == "__main__":

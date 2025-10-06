@@ -177,6 +177,10 @@ class OrthographyValidator:
                     "commodious",
                     "incommodious",
                     "furious",
+                    # Common verbs that are correctly spelled
+                    "loves",
+                    "proves",
+                    "receive",
                 }
 
                 if word in common_exceptions:
@@ -303,6 +307,18 @@ class OrthographyValidator:
                 if token.text[0].isupper() and token.pos.value == "noun":
                     continue
 
+                # Skip common exceptions
+                ortho_v_exceptions = {
+                    "receive",  # correctly spelled
+                    "believe",  # correctly spelled
+                    "achieve",  # correctly spelled
+                    "deceive",  # correctly spelled
+                    "perceive",  # correctly spelled
+                    "conceive",  # correctly spelled
+                }
+                if word in ortho_v_exceptions:
+                    continue
+
                 # Check suffixes that typically drop final e
                 dropping_suffixes = ["able", "ous", "ive", "ful", "less"]
                 for suffix in dropping_suffixes:
@@ -344,6 +360,18 @@ class OrthographyValidator:
 
                 # Skip proper nouns (capitalized words) - they follow different rules
                 if token.text[0].isupper() and token.pos.value == "noun":
+                    continue
+
+                # Skip common exceptions
+                ortho_vi_exceptions = {
+                    "receive",  # correctly spelled
+                    "believe",  # correctly spelled
+                    "achieve",  # correctly spelled
+                    "deceive",  # correctly spelled
+                    "perceive",  # correctly spelled
+                    "conceive",  # correctly spelled
+                }
+                if word in ortho_vi_exceptions:
                     continue
 
                 # Check vowel-initial suffixes
