@@ -177,9 +177,33 @@ class GrammarRuleValidator:
         if self.config.enforce_rule_4_strict:
             self._check_rule_4(parse_result)
 
+        # RULE 5: Nominative Independent (Address) (if enabled)
+        if self.config.enforce_rule_5_strict:
+            self._check_rule_5(parse_result)
+
+        # RULE 6: Nominative Absolute (if enabled)
+        if self.config.enforce_rule_6_strict:
+            self._check_rule_6(parse_result)
+
+        # RULE 7: Apposition (if enabled)
+        if self.config.enforce_rule_7_strict:
+            self._check_rule_7(parse_result)
+
         # RULE 8: Compound subjects need plural verb/pronoun (if enabled)
         if self.config.enforce_rule_8_strict:
             self._check_rule_8(parse_result)
+
+        # RULE 9: Disjunctive conjunctions need singular verb/pronoun (if enabled)
+        if self.config.enforce_rule_9_strict:
+            self._check_rule_9(parse_result)
+
+        # RULE 10: Collective nouns conveying unity need singular verb/pronoun (if enabled)
+        if self.config.enforce_rule_10_strict:
+            self._check_rule_10(parse_result)
+
+        # RULE 11: Nouns of multitude conveying plurality need plural verb/pronoun (if enabled)
+        if self.config.enforce_rule_11_strict:
+            self._check_rule_11(parse_result)
 
         # RULE 12: Possessive case governed by noun it possesses (if enabled)
         if self.config.enforce_rule_12_strict:
@@ -188,6 +212,22 @@ class GrammarRuleValidator:
         # RULE 13: Personal pronouns agree with their nouns in gender and number (if enabled)
         if self.config.enforce_rule_13_strict:
             self._check_rule_13(parse_result)
+
+        # RULE 14: Relative pronouns agree with their antecedents (if enabled)
+        if self.config.enforce_rule_14_strict:
+            self._check_rule_14(parse_result)
+
+        # RULE 15: Relative is nominative when no nominative between it and verb (if enabled)
+        if self.config.enforce_rule_15_strict:
+            self._check_rule_15(parse_result)
+
+        # RULE 16: Relative governed by verb when nominative between them (if enabled)
+        if self.config.enforce_rule_16_strict:
+            self._check_rule_16(parse_result)
+
+        # RULE 17: Interrogative pronouns agree with subsequent in case (if enabled)
+        if self.config.enforce_rule_17_strict:
+            self._check_rule_17(parse_result)
 
         # RULE 18: Adjectives belong to and qualify nouns (always checked if extended validation enabled)
         if self.config.enable_extended_validation:
@@ -204,6 +244,18 @@ class GrammarRuleValidator:
         # RULE 21: To be admits the same case after it as before it (if enabled)
         if self.config.enforce_rule_21_strict:
             self._check_rule_21(parse_result)
+
+        # RULE 22: Neuter verbs have same case before and after (if enabled)
+        if self.config.enforce_rule_22_strict:
+            self._check_rule_22(parse_result)
+
+        # RULE 23: Infinitive governed by verb/noun/adjective/participle/pronoun (if enabled)
+        if self.config.enforce_rule_23_strict:
+            self._check_rule_23(parse_result)
+
+        # RULE 24: Infinitive as nominative or object (if enabled)
+        if self.config.enforce_rule_24_strict:
+            self._check_rule_24(parse_result)
 
         # RULE 25: Bare infinitive after certain verbs (if enabled)
         if self.config.enforce_rule_25_strict:
@@ -224,6 +276,22 @@ class GrammarRuleValidator:
         # RULE 31: Prepositions govern the objective case (always checked if extended validation enabled)
         if self.config.enable_extended_validation:
             self._check_rule_31(parse_result)
+
+        # RULE 32: Nouns signifying distance/time governed by understood preposition (if enabled)
+        if self.config.enforce_rule_32_strict:
+            self._check_rule_32(parse_result)
+
+        # RULE 33: Conjunctions connect nouns/pronouns in same case (if enabled)
+        if self.config.enforce_rule_33_strict:
+            self._check_rule_33(parse_result)
+
+        # RULE 34: Conjunctions connect verbs of like moods and tenses (if enabled)
+        if self.config.enforce_rule_34_strict:
+            self._check_rule_34(parse_result)
+
+        # RULE 35: Noun/pronoun after than/as/but is nominative or governed (if enabled)
+        if self.config.enforce_rule_35_strict:
+            self._check_rule_35(parse_result)
 
         # Additional case checks (prep object, copula, governed infinitives)
         if self.config.enable_extended_validation:
@@ -359,8 +427,25 @@ class GrammarRuleValidator:
         # This handles complex chains like "will have been going" correctly
         verb_to_check = self._finite_verb_of_vp(parse_result.verb_phrase)
 
-        # Check agreement
-        agrees = self._check_agreement(subject_head, verb_to_check)
+        # Check if subject is compound (contains "and")
+        is_compound = self._is_compound_subject(parse_result.subject)
+
+        # For compound subjects, use plural agreement
+        if is_compound:
+            # Create a virtual plural subject for agreement checking
+            virtual_subject = Token(
+                text="compound_subject",
+                lemma="compound_subject",
+                pos=PartOfSpeech.NOUN,
+                start=parse_result.subject.tokens[0].start,
+                end=parse_result.subject.tokens[-1].end,
+                number=Number.PLURAL,
+                person=Person.THIRD,
+            )
+            agrees = self._check_agreement(virtual_subject, verb_to_check)
+        else:
+            agrees = self._check_agreement(subject_head, verb_to_check)
+
         parse_result.rule_checks[RuleID.RULE_4.value] = agrees
 
         if not agrees:
@@ -432,6 +517,51 @@ class GrammarRuleValidator:
         if verb.features.get("participle") == "past":
             return True  # Past participles work with all subjects
 
+        # For past tense verbs (gave, went, etc.) - they work with all subjects
+        if verb.features.get("tense") == "past":
+            return True
+
+        # Check for common past tense irregular verbs
+        past_tense_verbs = {
+            "gave",
+            "went",
+            "came",
+            "saw",
+            "took",
+            "made",
+            "got",
+            "had",
+            "did",
+            "said",
+            "thought",
+            "knew",
+            "felt",
+            "found",
+            "left",
+            "put",
+            "brought",
+            "bought",
+            "caught",
+            "taught",
+            "fought",
+            "sought",
+            "wrote",
+            "drove",
+            "rode",
+            "chose",
+            "spoke",
+            "broke",
+            "stole",
+            "froze",
+            "threw",
+            "drew",
+            "grew",
+            "flew",
+            "blew",
+        }
+        if verb.lemma in past_tense_verbs:
+            return True
+
         # For regular verbs: 3rd person singular should have -s
         if subj_person == Person.THIRD and subj_number == Number.SINGULAR:
             return verb.text.endswith("s") or verb.features.get("3sg", False)
@@ -440,6 +570,14 @@ class GrammarRuleValidator:
         if verb.text.endswith("ed"):
             return True
         return not verb.text.endswith("s") or verb.lemma in Lexicon.AUXILIARY_BE
+
+    def _is_compound_subject(self, subject_phrase) -> bool:
+        """Check if subject phrase is compound (contains 'and')."""
+        if not subject_phrase or not subject_phrase.tokens:
+            return False
+
+        # Check if any token in the subject phrase is "and"
+        return any(token.text.lower() == "and" for token in subject_phrase.tokens)
 
     def _check_rule_12(self, parse_result: ParseResult) -> None:
         """RULE 12: A noun or pronoun in the possessive case is governed by
@@ -548,18 +686,97 @@ class GrammarRuleValidator:
                             "keep",
                             "keeps",
                             "kept",
+                            "get",
+                            "gets",
+                            "got",
+                            "gotten",
                         }:
                             is_predicative = True
                             break
-                    # Stop if we hit a non-auxiliary word that's not an article, adverb, adjective, punctuation, or preposition
-                    if token_j.pos not in {
+                        # If we find a non-linking verb, continue looking (don't break)
+                        # This handles cases like "The more I study, the better I get"
+                        # where "study" is not the linking verb, but "get" is
+                    # Stop if we hit a non-auxiliary word that's not an article, adverb, adjective, punctuation, preposition, or pronoun
+                    elif token_j.pos not in {
                         PartOfSpeech.ARTICLE,
                         PartOfSpeech.ADVERB,
                         PartOfSpeech.ADJECTIVE,
                         PartOfSpeech.PUNCTUATION,
                         PartOfSpeech.PREPOSITION,
+                        PartOfSpeech.PRONOUN,
                     }:
                         break
+
+                # Also look forward for linking verbs (handles cases like "The more I study, the better I get")
+                if not is_predicative:
+                    for j in range(i + 1, len(parse_result.tokens)):
+                        token_j = parse_result.tokens[j]
+                        if token_j.pos == PartOfSpeech.VERB:
+                            # Check for "to be" verbs or other linking verbs
+                            if (
+                                token_j.lemma in Lexicon.AUXILIARY_BE
+                                or token_j.lemma
+                                in {
+                                    "prove",
+                                    "proves",
+                                    "proved",
+                                    "become",
+                                    "becomes",
+                                    "became",
+                                    "seem",
+                                    "seems",
+                                    "seemed",
+                                    "appear",
+                                    "appears",
+                                    "appeared",
+                                    "look",
+                                    "looks",
+                                    "looked",
+                                    "feel",
+                                    "feels",
+                                    "felt",
+                                    "sound",
+                                    "sounds",
+                                    "sounded",
+                                    "taste",
+                                    "tastes",
+                                    "tasted",
+                                    "smell",
+                                    "smells",
+                                    "smelled",
+                                    "grow",
+                                    "grows",
+                                    "grew",
+                                    "turn",
+                                    "turns",
+                                    "turned",
+                                    "remain",
+                                    "remains",
+                                    "remained",
+                                    "stay",
+                                    "stays",
+                                    "stayed",
+                                    "keep",
+                                    "keeps",
+                                    "kept",
+                                    "get",
+                                    "gets",
+                                    "got",
+                                    "gotten",
+                                }
+                            ):
+                                is_predicative = True
+                                break
+                        # Stop if we hit a non-auxiliary word that's not an article, adverb, adjective, punctuation, preposition, or pronoun
+                        elif token_j.pos not in {
+                            PartOfSpeech.ARTICLE,
+                            PartOfSpeech.ADVERB,
+                            PartOfSpeech.ADJECTIVE,
+                            PartOfSpeech.PUNCTUATION,
+                            PartOfSpeech.PREPOSITION,
+                            PartOfSpeech.PRONOUN,
+                        }:
+                            break
 
                 # Also check for ellipsis cases (implied "to be" verbs)
                 # Look for patterns like "X, and Y [adjective]" where Y is a noun
@@ -627,9 +844,22 @@ class GrammarRuleValidator:
 
         if is_transitive and parse_result.voice == Voice.ACTIVE:
             has_object = parse_result.object_phrase is not None
-            parse_result.rule_checks[RuleID.RULE_20.value] = has_object
 
-            if not has_object:
+            # Check for relative pronouns that serve as objects
+            has_relative_object = self._has_relative_object(parse_result)
+
+            # Check for verbs that can be used intransitively
+            verb_head = parse_result.verb_phrase.head_token
+            can_be_intransitive = self._can_verb_be_intransitive(verb_head)
+
+            # Only flag if verb truly needs an object
+            needs_object = (
+                not has_object and not has_relative_object and not can_be_intransitive
+            )
+
+            parse_result.rule_checks[RuleID.RULE_20.value] = not needs_object
+
+            if needs_object:
                 # Create Flag with span for verb phrase
                 vp_start = parse_result.verb_phrase.tokens[0].start
                 vp_end = parse_result.verb_phrase.tokens[-1].end
@@ -792,7 +1022,15 @@ class GrammarRuleValidator:
             if noun_count >= 2:
                 # Check if verb is plural
                 verb_token = self._finite_verb_of_vp(parse_result.verb_phrase)
-                is_plural_verb = verb_token.number == Number.PLURAL
+
+                # For compound subjects, base form verbs (like "play", "run", "walk") are considered plural
+                # Check if verb is explicitly plural OR is a base form that works with plural subjects
+                # OR is a plural form of "be" (are, were)
+                is_plural_verb = (
+                    verb_token.number == Number.PLURAL
+                    or self._is_base_form_verb_for_plural(verb_token)
+                    or verb_token.lemma in {"are", "were"}
+                )
 
                 parse_result.rule_checks[RuleID.RULE_8.value] = is_plural_verb
 
@@ -1081,5 +1319,1053 @@ class GrammarRuleValidator:
                     rule=RuleID.RULE_30,
                     message=f"Preposition '{prep_token.text}' should be followed by its object",
                     span=Span(prep_token.start, prep_token.end),
+                )
+            )
+
+    def _has_relative_object(self, parse_result: ParseResult) -> bool:
+        """Check if there are relative pronouns that serve as objects."""
+        if not parse_result.tokens:
+            return False
+
+        # Look for relative pronouns (who, whom, which, that) that could be objects
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.PRONOUN and token.lemma in {
+                "who",
+                "whom",
+                "which",
+                "that",
+            }:
+                # Check if this relative pronoun is followed by a subject and then our verb
+                if i + 2 < len(parse_result.tokens):
+                    next_token = parse_result.tokens[i + 1]
+                    verb_token = parse_result.tokens[i + 2]
+                    if (
+                        next_token.pos in {PartOfSpeech.PRONOUN, PartOfSpeech.NOUN}
+                        and verb_token.pos == PartOfSpeech.VERB
+                        and verb_token.features.get("transitive", False)
+                    ):
+                        return True
+        return False
+
+    def _can_verb_be_intransitive(self, verb_token: Token) -> bool:
+        """Check if a verb can be used intransitively."""
+        # Verbs that are commonly used intransitively
+        intransitive_verbs = {
+            "play",
+            "plays",
+            "played",  # "The children play"
+            "study",
+            "studies",
+            "studied",  # "I study every day"
+            "work",
+            "works",
+            "worked",  # "He works hard"
+            "run",
+            "runs",
+            "ran",  # "She runs fast"
+            "walk",
+            "walks",
+            "walked",  # "They walk to school"
+            "sleep",
+            "sleeps",
+            "slept",  # "I sleep well"
+            "eat",
+            "eats",
+            "ate",  # "We eat together"
+            "drink",
+            "drinks",
+            "drank",  # "They drink water"
+            "read",
+            "reads",
+            "write",
+            "writes",
+            "wrote",  # "He writes stories"
+            "see",
+            "sees",
+            "saw",  # "I can see" (ability)
+            "hear",
+            "hears",
+            "heard",  # "I can hear"
+            "smell",
+            "smells",
+            "smelled",  # "I can smell"
+            "taste",
+            "tastes",
+            "tasted",  # "I can taste"
+            "feel",
+            "feels",
+            "felt",  # "I can feel"
+        }
+        return verb_token.lemma in intransitive_verbs
+
+    def _is_base_form_verb_for_plural(self, verb_token: Token) -> bool:
+        """Check if a verb is a base form that works with plural subjects."""
+        # Base form verbs that work with plural subjects (no -s ending)
+        base_form_verbs = {
+            "play",
+            "run",
+            "walk",
+            "talk",
+            "work",
+            "study",
+            "eat",
+            "drink",
+            "sleep",
+            "read",
+            "write",
+            "see",
+            "hear",
+            "feel",
+            "think",
+            "know",
+            "go",
+            "come",
+            "stay",
+            "leave",
+            "arrive",
+            "depart",
+            "begin",
+            "start",
+            "end",
+            "finish",
+            "continue",
+            "stop",
+            "help",
+            "want",
+            "need",
+            "like",
+            "love",
+            "hate",
+            "prefer",
+            "choose",
+            "decide",
+            "plan",
+            "hope",
+            "expect",
+            "believe",
+            "understand",
+            "remember",
+            "forget",
+            "learn",
+            "teach",
+            "show",
+            "tell",
+            "ask",
+            "answer",
+            "speak",
+            "listen",
+            "watch",
+            "look",
+            "find",
+            "lose",
+            "win",
+            "fail",
+            "succeed",
+            "try",
+            "attempt",
+        }
+        return verb_token.lemma in base_form_verbs
+
+    def _check_rule_5(self, parse_result: ParseResult) -> None:
+        """RULE 5: When an address is made, the noun or pronoun addressed, is put in the nominative case independent."""
+        violations = []
+
+        # Look for vocative expressions (direct address)
+        # Pattern: "John, come here" or "Come here, John"
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos in {PartOfSpeech.NOUN, PartOfSpeech.PRONOUN}:
+                # Check if this is a direct address
+                is_vocative = False
+
+                # Check if followed by comma and imperative/command
+                if (
+                    i + 1 < len(parse_result.tokens)
+                    and parse_result.tokens[i + 1].text == ","
+                    and i + 2 < len(parse_result.tokens)
+                ):
+                    next_token = parse_result.tokens[i + 2]
+                    if next_token.pos == PartOfSpeech.VERB:
+                        is_vocative = True
+
+                # Check if preceded by comma and imperative/command
+                elif (
+                    i > 1
+                    and parse_result.tokens[i - 1].text == ","
+                    and parse_result.tokens[i - 2].pos == PartOfSpeech.VERB
+                ):
+                    is_vocative = True
+
+                if is_vocative and token.case != Case.NOMINATIVE:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_5.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_5,
+                    message=f"Addressed noun/pronoun {token.text} should be in nominative case independent",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_6(self, parse_result: ParseResult) -> None:
+        """RULE 6: A noun or pronoun placed before a participle, and being independent of the rest of the sentence, is in the nominative case absolute."""
+        violations = []
+
+        # Look for absolute constructions: "The weather being fine, we went out"
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos in {PartOfSpeech.NOUN, PartOfSpeech.PRONOUN}:
+                # Check if followed by participle and comma
+                if (
+                    i + 2 < len(parse_result.tokens)
+                    and parse_result.tokens[i + 1].pos == PartOfSpeech.PARTICIPLE
+                    and parse_result.tokens[i + 2].text == ","
+                ):
+                    # This is likely an absolute construction
+                    if token.case != Case.NOMINATIVE:
+                        violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_6.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_6,
+                    message=f"Noun/pronoun {token.text} in absolute construction should be in nominative case",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_7(self, parse_result: ParseResult) -> None:
+        """RULE 7: Two or more nouns, or nouns and pronouns, signifying the same thing, are put, by apposition, in the same case."""
+        violations = []
+
+        # Look for appositive constructions: "John, the teacher, is here"
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos in {PartOfSpeech.NOUN, PartOfSpeech.PRONOUN}:
+                # Check if this is an appositive (noun/pronoun set off by commas)
+                if (
+                    i > 0
+                    and i + 1 < len(parse_result.tokens)
+                    and parse_result.tokens[i - 1].text == ","
+                    and parse_result.tokens[i + 1].text == ","
+                ):
+                    # Find the main noun/pronoun this appositive refers to
+                    main_token = None
+                    # Look backwards for the main noun/pronoun
+                    for j in range(i - 2, -1, -1):
+                        if parse_result.tokens[j].pos in {
+                            PartOfSpeech.NOUN,
+                            PartOfSpeech.PRONOUN,
+                        }:
+                            main_token = parse_result.tokens[j]
+                            break
+
+                    # Look forwards for the main noun/pronoun
+                    if main_token is None:
+                        for j in range(i + 2, len(parse_result.tokens)):
+                            if parse_result.tokens[j].pos in {
+                                PartOfSpeech.NOUN,
+                                PartOfSpeech.PRONOUN,
+                            }:
+                                main_token = parse_result.tokens[j]
+                                break
+
+                    if main_token and token.case != main_token.case:
+                        violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_7.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_7,
+                    message=f"Appositive {token.text} should be in the same case as the noun it refers to",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_9(self, parse_result: ParseResult) -> None:
+        """RULE 9: Two or more nouns, or nouns and pronouns, in the singular number, connected by disjunctive conjunctions, must have verbs, nouns, and pronouns, agreeing with them in the singular."""
+        if not parse_result.subject or not parse_result.verb_phrase:
+            parse_result.rule_checks[RuleID.RULE_9.value] = True
+            return
+
+        # Check if subject contains disjunctive conjunctions (or, nor)
+        subject_tokens = parse_result.subject.tokens
+        has_disjunctive = any(
+            token.text.lower() in {"or", "nor"} for token in subject_tokens
+        )
+
+        if has_disjunctive:
+            # Count nouns in subject
+            noun_count = sum(
+                1 for token in subject_tokens if token.pos == PartOfSpeech.NOUN
+            )
+
+            if noun_count >= 2:
+                # Check if verb is singular (for disjunctive subjects)
+                verb_token = self._finite_verb_of_vp(parse_result.verb_phrase)
+                is_singular_verb = (
+                    verb_token.number == Number.SINGULAR
+                    or verb_token.lemma in {"is", "was", "has", "does"}
+                    or self._is_singular_form_verb(verb_token)
+                )
+
+                parse_result.rule_checks[RuleID.RULE_9.value] = is_singular_verb
+
+                if not is_singular_verb:
+                    parse_result.flags.append(
+                        Flag(
+                            rule=RuleID.RULE_9,
+                            message=f"Disjunctive subject requires singular verb, not {verb_token.text}",
+                            span=Span(verb_token.start, verb_token.end),
+                        )
+                    )
+            else:
+                parse_result.rule_checks[RuleID.RULE_9.value] = True
+        else:
+            parse_result.rule_checks[RuleID.RULE_9.value] = True
+
+    def _check_rule_10(self, parse_result: ParseResult) -> None:
+        """RULE 10: A collective noun or noun of multitude, conveying unity of idea, generally has a verb or pronoun agreeing with it in the singular."""
+        violations = []
+
+        # Collective nouns that convey unity of idea
+        collective_nouns = {
+            "team",
+            "group",
+            "class",
+            "family",
+            "committee",
+            "jury",
+            "audience",
+            "crowd",
+            "herd",
+            "flock",
+            "pack",
+            "swarm",
+            "school",
+            "army",
+            "navy",
+            "government",
+            "company",
+            "corporation",
+            "organization",
+            "society",
+        }
+
+        for token in parse_result.tokens:
+            if (
+                token.pos == PartOfSpeech.NOUN
+                and token.lemma in collective_nouns
+                and token.number == Number.PLURAL
+            ):
+                violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_10.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_10,
+                    message=f"Collective noun {token.text} conveying unity should be singular",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_11(self, parse_result: ParseResult) -> None:
+        """RULE 11: A noun of multitude, conveying plurality of idea, must have a verb or pronoun agreeing with it in the plural."""
+        violations = []
+
+        # Nouns of multitude that convey plurality of idea
+        multitude_nouns = {
+            "people",
+            "men",
+            "women",
+            "children",
+            "police",
+            "cattle",
+            "poultry",
+            "vermin",
+            "clergy",
+            "gentry",
+            "nobility",
+            "peasantry",
+        }
+
+        for token in parse_result.tokens:
+            if (
+                token.pos == PartOfSpeech.NOUN
+                and token.lemma in multitude_nouns
+                and token.number == Number.SINGULAR
+            ):
+                violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_11.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_11,
+                    message=f"Noun of multitude {token.text} conveying plurality should be plural",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _is_singular_form_verb(self, verb_token: Token) -> bool:
+        """Check if a verb is in singular form."""
+        # Singular forms of common verbs
+        singular_forms = {
+            "is",
+            "was",
+            "has",
+            "does",
+            "goes",
+            "comes",
+            "runs",
+            "walks",
+            "talks",
+            "works",
+            "studies",
+            "eats",
+            "drinks",
+            "sleeps",
+            "reads",
+            "writes",
+            "sees",
+            "hears",
+            "feels",
+            "thinks",
+            "knows",
+        }
+        return verb_token.lemma in singular_forms
+
+    def _check_rule_14(self, parse_result: ParseResult) -> None:
+        """RULE 14: Relative pronouns agree with their antecedents, in gender, person, and number."""
+        violations = []
+
+        # Relative pronouns
+        relative_pronouns = {"who", "whom", "which", "that", "whose"}
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.PRONOUN and token.lemma in relative_pronouns:
+                # Find the antecedent (noun/pronoun this relative refers to)
+                antecedent = self._find_antecedent(parse_result.tokens, i)
+
+                if antecedent:
+                    # Check agreement in gender, person, and number
+                    if (
+                        token.gender != antecedent.gender
+                        or token.person != antecedent.person
+                        or token.number != antecedent.number
+                    ):
+                        violations.append((token, antecedent))
+
+        parse_result.rule_checks[RuleID.RULE_14.value] = len(violations) == 0
+
+        for relative_token, antecedent_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_14,
+                    message=f"Relative pronoun {relative_token.text} should agree with antecedent {antecedent_token.text} in gender, person, and number",
+                    span=Span(relative_token.start, relative_token.end),
+                )
+            )
+
+    def _check_rule_15(self, parse_result: ParseResult) -> None:
+        """RULE 15: The relative is the nominative case to the verb, when no nominative comes between it and the verb."""
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.PRONOUN and token.lemma in {
+                "who",
+                "which",
+                "that",
+            }:
+                # Look for verb after the relative pronoun
+                verb_found = False
+                nominative_between = False
+
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos == PartOfSpeech.VERB:
+                        verb_found = True
+                        break
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        nominative_between = True
+
+                if (
+                    verb_found
+                    and not nominative_between
+                    and token.case != Case.NOMINATIVE
+                ):
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_15.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_15,
+                    message=f"Relative pronoun {token.text} should be in nominative case when no nominative comes between it and the verb",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_16(self, parse_result: ParseResult) -> None:
+        """RULE 16: When a nominative comes between the relative and the verb, the relative is governed by the following verb, or by some other word in its own member of the sentence."""
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.PRONOUN and token.lemma in {
+                "who",
+                "whom",
+                "which",
+                "that",
+            }:
+                # Look for nominative between relative and verb
+                nominative_between = False
+                verb_after = None
+
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        nominative_between = True
+                    elif (
+                        parse_result.tokens[j].pos == PartOfSpeech.VERB
+                        and nominative_between
+                    ):
+                        verb_after = parse_result.tokens[j]
+                        break
+
+                if nominative_between and verb_after:
+                    # Relative should be governed by the verb (objective case for transitive verbs)
+                    if (
+                        verb_after.features.get("transitive", False)
+                        and token.case != Case.OBJECTIVE
+                    ):
+                        violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_16.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_16,
+                    message=f"Relative pronoun {token.text} should be in objective case when nominative comes between it and transitive verb",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_17(self, parse_result: ParseResult) -> None:
+        """RULE 17: When a relative pronoun is of the interrogative kind, it refers to the word or phrase containing the answer to the question for its subsequent, which subsequent must agree in case with the interrogative."""
+        violations = []
+
+        # Interrogative pronouns
+        interrogative_pronouns = {"who", "whom", "which", "what", "whose"}
+
+        for i, token in enumerate(parse_result.tokens):
+            if (
+                token.pos == PartOfSpeech.PRONOUN
+                and token.lemma in interrogative_pronouns
+            ):
+                # Check if this is in a question context
+                is_question = any(t.text == "?" for t in parse_result.tokens)
+
+                if is_question:
+                    # Find the subsequent (answer) in the sentence
+                    subsequent = self._find_subsequent_in_question(
+                        parse_result.tokens, i
+                    )
+
+                    if subsequent and token.case != subsequent.case:
+                        violations.append((token, subsequent))
+
+        parse_result.rule_checks[RuleID.RULE_17.value] = len(violations) == 0
+
+        for interrogative_token, subsequent_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_17,
+                    message=f"Interrogative pronoun {interrogative_token.text} should agree in case with subsequent {subsequent_token.text}",
+                    span=Span(interrogative_token.start, interrogative_token.end),
+                )
+            )
+
+    def _find_antecedent(
+        self, tokens: list[Token], relative_index: int
+    ) -> Token | None:
+        """Find the antecedent noun/pronoun for a relative pronoun."""
+        # Look backwards from the relative pronoun
+        for i in range(relative_index - 1, -1, -1):
+            token = tokens[i]
+            if token.pos in {PartOfSpeech.NOUN, PartOfSpeech.PRONOUN}:
+                return token
+        return None
+
+    def _find_subsequent_in_question(
+        self, tokens: list[Token], interrogative_index: int
+    ) -> Token | None:
+        """Find the subsequent (answer) noun/pronoun in a question."""
+        # Look forwards from the interrogative pronoun
+        for i in range(interrogative_index + 1, len(tokens)):
+            token = tokens[i]
+            if token.pos in {PartOfSpeech.NOUN, PartOfSpeech.PRONOUN}:
+                return token
+        return None
+
+    def _check_rule_22(self, parse_result: ParseResult) -> None:
+        """RULE 22: Active-intransitive and passive verbs, the verb to become, and other neuter verbs, have the same case after them as before them, when both words refer to, and signify, the same thing."""
+        violations = []
+
+        # Neuter verbs (linking verbs that don't take objects)
+        neuter_verbs = {
+            "become",
+            "becomes",
+            "became",
+            "seem",
+            "seems",
+            "seemed",
+            "appear",
+            "appears",
+            "appeared",
+            "look",
+            "looks",
+            "looked",
+            "feel",
+            "feels",
+            "felt",
+            "sound",
+            "sounds",
+            "sounded",
+            "taste",
+            "tastes",
+            "tasted",
+            "smell",
+            "smells",
+            "smelled",
+            "grow",
+            "grows",
+            "grew",
+            "turn",
+            "turns",
+            "turned",
+            "remain",
+            "remains",
+            "remained",
+            "stay",
+            "stays",
+            "stayed",
+            "keep",
+            "keeps",
+            "kept",
+            "get",
+            "gets",
+            "got",
+            "gotten",
+        }
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.VERB and token.lemma in neuter_verbs:
+                # Find subject before verb
+                subject_token = None
+                for j in range(i - 1, -1, -1):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        subject_token = parse_result.tokens[j]
+                        break
+
+                # Find complement after verb
+                complement_token = None
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        complement_token = parse_result.tokens[j]
+                        break
+
+                if subject_token and complement_token:
+                    # Check if they refer to the same thing (same case)
+                    if subject_token.case != complement_token.case:
+                        violations.append((token, subject_token, complement_token))
+
+        parse_result.rule_checks[RuleID.RULE_22.value] = len(violations) == 0
+
+        for verb_token, subject_token, complement_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_22,
+                    message=f"Neuter verb {verb_token.text} requires same case before and after when referring to same thing",
+                    span=Span(subject_token.start, complement_token.end),
+                )
+            )
+
+    def _check_rule_23(self, parse_result: ParseResult) -> None:
+        """RULE 23: A verb in the infinitive mood may be governed by a verb, noun, adjective, participle, or pronoun."""
+        violations = []
+
+        # Look for infinitive verbs (preceded by "to")
+        for i, token in enumerate(parse_result.tokens):
+            if (
+                token.pos == PartOfSpeech.VERB
+                and token.features.get("mood") == "infinitive"
+            ):
+                # Check if preceded by governing word
+                has_governor = False
+
+                # Look backwards for governor
+                for j in range(i - 1, -1, -1):
+                    governor = parse_result.tokens[j]
+                    if governor.pos in {
+                        PartOfSpeech.VERB,
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.ADJECTIVE,
+                        PartOfSpeech.PARTICIPLE,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        has_governor = True
+                        break
+                    if governor.text.lower() == "to":
+                        # "to" is the infinitive marker, continue looking
+                        continue
+                    break
+
+                if not has_governor:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_23.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_23,
+                    message=f"Infinitive verb {token.text} should be governed by a verb, noun, adjective, participle, or pronoun",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_24(self, parse_result: ParseResult) -> None:
+        """RULE 24: The infinitive mood, or part of a sentence, is frequently put as the nominative case to a verb, or the object of an active-transitive verb."""
+        violations = []
+
+        # Look for infinitive verbs
+        for i, token in enumerate(parse_result.tokens):
+            if (
+                token.pos == PartOfSpeech.VERB
+                and token.features.get("mood") == "infinitive"
+            ):
+                # Check if used as nominative (subject) or object
+                is_nominative = False
+                is_object = False
+
+                # Check if used as subject (before main verb)
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos == PartOfSpeech.VERB:
+                        is_nominative = True
+                        break
+
+                # Check if used as object (after transitive verb)
+                for j in range(i - 1, -1, -1):
+                    if parse_result.tokens[j].pos == PartOfSpeech.VERB:
+                        if parse_result.tokens[j].features.get("transitive", False):
+                            is_object = True
+                        break
+
+                if not is_nominative and not is_object:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_24.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_24,
+                    message=f"Infinitive {token.text} should be used as nominative or object of transitive verb",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_26(self, parse_result: ParseResult) -> None:
+        """RULE 26: Participles have the same government as the verbs have from which they are derived."""
+        violations = []
+
+        for token in parse_result.tokens:
+            if token.pos == PartOfSpeech.PARTICIPLE:
+                # Check if participle has proper government (object for transitive verbs)
+                base_verb = token.lemma  # Get base form
+
+                # Check if base verb is transitive
+                if base_verb in Lexicon.COMMON_TRANSITIVE_VERBS:
+                    # Look for object after participle
+                    has_object = False
+                    for i, t in enumerate(parse_result.tokens):
+                        if t == token:
+                            # Look for object after this participle
+                            for j in range(i + 1, len(parse_result.tokens)):
+                                if parse_result.tokens[j].pos in {
+                                    PartOfSpeech.NOUN,
+                                    PartOfSpeech.PRONOUN,
+                                }:
+                                    has_object = True
+                                    break
+                            break
+
+                    if not has_object:
+                        violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_26.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_26,
+                    message=f"Participle {token.text} derived from transitive verb should have object",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_27(self, parse_result: ParseResult) -> None:
+        """RULE 27: The present participle refers to some noun or pronoun denoting the subject or actor."""
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if (
+                token.pos == PartOfSpeech.PARTICIPLE
+                and token.features.get("participle") == "present"
+            ):
+                # Look for subject/actor noun/pronoun
+                has_subject = False
+
+                # Look backwards for subject
+                for j in range(i - 1, -1, -1):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        has_subject = True
+                        break
+
+                # Look forwards for subject
+                if not has_subject:
+                    for j in range(i + 1, len(parse_result.tokens)):
+                        if parse_result.tokens[j].pos in {
+                            PartOfSpeech.NOUN,
+                            PartOfSpeech.PRONOUN,
+                        }:
+                            has_subject = True
+                            break
+
+                if not has_subject:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_27.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_27,
+                    message=f"Present participle {token.text} should refer to a subject or actor",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_32(self, parse_result: ParseResult) -> None:
+        """RULE 32: Home, and nouns signifying distance, time when, how long, &c. are generally governed by a preposition understood."""
+        violations = []
+
+        # Nouns that typically need understood prepositions
+        understood_prep_nouns = {
+            "home",
+            "distance",
+            "time",
+            "duration",
+            "length",
+            "width",
+            "height",
+            "depth",
+            "breadth",
+            "extent",
+            "space",
+            "place",
+            "location",
+        }
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.NOUN and token.lemma in understood_prep_nouns:
+                # Check if preceded by preposition
+                has_preposition = False
+                if i > 0 and parse_result.tokens[i - 1].pos == PartOfSpeech.PREPOSITION:
+                    has_preposition = True
+
+                if not has_preposition:
+                    violations.append(token)
+
+        parse_result.rule_checks[RuleID.RULE_32.value] = len(violations) == 0
+
+        for token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_32,
+                    message=f"Noun {token.text} typically requires understood preposition",
+                    span=Span(token.start, token.end),
+                )
+            )
+
+    def _check_rule_33(self, parse_result: ParseResult) -> None:
+        """RULE 33: Conjunctions connect nouns and pronouns in the same case."""
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.CONJUNCTION and token.text.lower() in {
+                "and",
+                "or",
+                "nor",
+                "but",
+            }:
+                # Find nouns/pronouns connected by this conjunction
+                left_token = None
+                right_token = None
+
+                # Look backwards for first noun/pronoun
+                for j in range(i - 1, -1, -1):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        left_token = parse_result.tokens[j]
+                        break
+
+                # Look forwards for second noun/pronoun
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        right_token = parse_result.tokens[j]
+                        break
+
+                if left_token and right_token and left_token.case != right_token.case:
+                    violations.append((token, left_token, right_token))
+
+        parse_result.rule_checks[RuleID.RULE_33.value] = len(violations) == 0
+
+        for conj_token, left_token, right_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_33,
+                    message=f"Conjunction {conj_token.text} connects nouns/pronouns that should be in same case",
+                    span=Span(left_token.start, right_token.end),
+                )
+            )
+
+    def _check_rule_34(self, parse_result: ParseResult) -> None:
+        """RULE 34: Conjunctions generally connect verbs of like moods and tenses."""
+        violations = []
+
+        for i, token in enumerate(parse_result.tokens):
+            if token.pos == PartOfSpeech.CONJUNCTION and token.text.lower() in {
+                "and",
+                "or",
+                "nor",
+                "but",
+            }:
+                # Find verbs connected by this conjunction
+                left_verb = None
+                right_verb = None
+
+                # Look backwards for first verb
+                for j in range(i - 1, -1, -1):
+                    if parse_result.tokens[j].pos == PartOfSpeech.VERB:
+                        left_verb = parse_result.tokens[j]
+                        break
+
+                # Look forwards for second verb
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos == PartOfSpeech.VERB:
+                        right_verb = parse_result.tokens[j]
+                        break
+
+                if left_verb and right_verb:
+                    # Check if verbs have compatible moods and tenses
+                    left_mood = left_verb.features.get("mood", "indicative")
+                    right_mood = right_verb.features.get("mood", "indicative")
+                    left_tense = left_verb.features.get("tense", "present")
+                    right_tense = right_verb.features.get("tense", "present")
+
+                    if left_mood != right_mood or left_tense != right_tense:
+                        violations.append((token, left_verb, right_verb))
+
+        parse_result.rule_checks[RuleID.RULE_34.value] = len(violations) == 0
+
+        for conj_token, left_verb, right_verb in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_34,
+                    message=f"Conjunction {conj_token.text} connects verbs that should have like moods and tenses",
+                    span=Span(left_verb.start, right_verb.end),
+                )
+            )
+
+    def _check_rule_35(self, parse_result: ParseResult) -> None:
+        """RULE 35: A noun or pronoun following the conjunction than, as, or but, is nominative to a verb, or governed by a verb or preposition, expressed or understood."""
+        violations = []
+
+        comparison_conjunctions = {"than", "as", "but"}
+
+        for i, token in enumerate(parse_result.tokens):
+            if (
+                token.pos == PartOfSpeech.CONJUNCTION
+                and token.text.lower() in comparison_conjunctions
+            ):
+                # Find noun/pronoun after conjunction
+                following_token = None
+                for j in range(i + 1, len(parse_result.tokens)):
+                    if parse_result.tokens[j].pos in {
+                        PartOfSpeech.NOUN,
+                        PartOfSpeech.PRONOUN,
+                    }:
+                        following_token = parse_result.tokens[j]
+                        break
+
+                if following_token:
+                    # Check if it's nominative to a verb or governed by verb/preposition
+                    is_nominative = False
+                    is_governed = False
+
+                    # Look for verb after the noun/pronoun
+                    for j in range(i + 2, len(parse_result.tokens)):
+                        if parse_result.tokens[j].pos == PartOfSpeech.VERB:
+                            is_nominative = True
+                            break
+
+                    # Look for governing verb or preposition before
+                    for j in range(i - 1, -1, -1):
+                        if parse_result.tokens[j].pos in {
+                            PartOfSpeech.VERB,
+                            PartOfSpeech.PREPOSITION,
+                        }:
+                            is_governed = True
+                            break
+
+                    if not is_nominative and not is_governed:
+                        violations.append((token, following_token))
+
+        parse_result.rule_checks[RuleID.RULE_35.value] = len(violations) == 0
+
+        for conj_token, noun_token in violations:
+            parse_result.flags.append(
+                Flag(
+                    rule=RuleID.RULE_35,
+                    message=f"Noun/pronoun {noun_token.text} after {conj_token.text} should be nominative to verb or governed by verb/preposition",
+                    span=Span(conj_token.start, noun_token.end),
                 )
             )

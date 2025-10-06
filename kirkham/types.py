@@ -98,11 +98,21 @@ class RuleID(str, Enum):
     # Subject-Verb Agreement Rules
     RULE_3 = "RULE_3"  # Nominative case governs verb
     RULE_4 = "RULE_4"  # Verb agrees with subject in number and person
+    RULE_5 = "RULE_5"  # Nominative independent (address)
+    RULE_6 = "RULE_6"  # Nominative absolute
+    RULE_7 = "RULE_7"  # Apposition
     RULE_8 = "RULE_8"  # Compound subjects need plural verb/pronoun
+    RULE_9 = "RULE_9"  # Disjunctive conjunctions
+    RULE_10 = "RULE_10"  # Collective nouns (unity)
+    RULE_11 = "RULE_11"  # Nouns of multitude (plurality)
     RULE_12 = "RULE_12"  # Possessive governance
 
     # Pronoun Agreement Rules
     RULE_13 = "RULE_13"  # Personal pronouns agree with their nouns in gender and number
+    RULE_14 = "RULE_14"  # Relative pronouns agree with antecedents
+    RULE_15 = "RULE_15"  # Relative nominative case
+    RULE_16 = "RULE_16"  # Relative governed by verb
+    RULE_17 = "RULE_17"  # Interrogative pronoun agreement
 
     # Adjective Rules
     RULE_18 = "RULE_18"  # Adjectives qualify nouns
@@ -111,11 +121,12 @@ class RuleID(str, Enum):
     # Verb and Case Rules
     RULE_20 = "RULE_20"  # Active-transitive verbs govern objective case
     RULE_21 = "RULE_21"  # To be admits the same case after it as before it
-
-    # Infinitive Rules
+    RULE_22 = "RULE_22"  # Neuter verbs same case
+    RULE_23 = "RULE_23"  # Infinitive governed by word
+    RULE_24 = "RULE_24"  # Infinitive as nominative/object
     RULE_25 = "RULE_25"  # Bare infinitive after certain verbs
-
-    # Participle Rules
+    RULE_26 = "RULE_26"  # Participles same government
+    RULE_27 = "RULE_27"  # Present participle refers to subject
     RULE_28 = "RULE_28"  # Perfect participle belongs to noun/pronoun
 
     # Adverb Rules
@@ -126,6 +137,10 @@ class RuleID(str, Enum):
     # Preposition Rules
     RULE_30 = "RULE_30"  # Prepositions are generally placed before the case they govern
     RULE_31 = "RULE_31"  # Prepositions govern the objective case
+    RULE_32 = "RULE_32"  # Nouns governed by understood preposition
+    RULE_33 = "RULE_33"  # Conjunctions connect same case
+    RULE_34 = "RULE_34"  # Conjunctions connect like moods/tenses
+    RULE_35 = "RULE_35"  # Noun/pronoun after than/as/but
 
     # Orthography (Spelling) Rules
     ORTHO_I = "ORTHO_I"  # Monosyllables ending in f, l, or s: double final consonant

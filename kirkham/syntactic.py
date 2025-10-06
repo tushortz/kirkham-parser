@@ -382,9 +382,63 @@ class SyntacticParser:
                     else:
                         break
 
-                subject_tokens = tokens[start_idx : i + 1]
+                # Check for compound subjects with "and"
+                # Look for "and" before the subject to include compound subjects
+                compound_start_idx = start_idx
+                k = start_idx - 1
+                while k >= 0:
+                    token = tokens[k]
+                    if token.text.lower() == "and":
+                        # Found "and", look for another noun/pronoun before it
+                        left_idx = k - 1
+                        while left_idx >= 0:
+                            if tokens[left_idx].pos in {
+                                PartOfSpeech.NOUN,
+                                PartOfSpeech.PRONOUN,
+                            }:
+                                # Found compound subject, extend backwards
+                                compound_start_idx = left_idx
+                                # Include determiners/adjectives for the first part
+                                m = left_idx - 1
+                                while m >= 0:
+                                    prev_token = tokens[m]
+                                    if prev_token.pos == PartOfSpeech.PREPOSITION:
+                                        break
+                                    if (
+                                        prev_token.case == Case.POSSESSIVE
+                                        or prev_token.pos
+                                        in {
+                                            PartOfSpeech.ARTICLE,
+                                            PartOfSpeech.ADJECTIVE,
+                                        }
+                                        or self._looks_adverb(prev_token)
+                                    ):
+                                        compound_start_idx = m
+                                        m -= 1
+                                    else:
+                                        break
+                                break
+                            if tokens[left_idx].pos in {
+                                PartOfSpeech.ARTICLE,
+                                PartOfSpeech.ADJECTIVE,
+                            } or self._looks_adverb(tokens[left_idx]):
+                                left_idx -= 1
+                            else:
+                                break
+                        break
+                    if token.pos in {
+                        PartOfSpeech.ARTICLE,
+                        PartOfSpeech.ADJECTIVE,
+                    } or self._looks_adverb(token):
+                        k -= 1
+                    else:
+                        break
+
+                subject_tokens = tokens[compound_start_idx : i + 1]
                 return Phrase(
-                    tokens=subject_tokens, phrase_type="NP", head_index=i - start_idx
+                    tokens=subject_tokens,
+                    phrase_type="NP",
+                    head_index=i - compound_start_idx,
                 )
 
         return None
