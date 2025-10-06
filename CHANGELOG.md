@@ -5,27 +5,41 @@ All notable changes to the Kirkham Grammar Parser project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2025-10-06
 
 ### Added
-- Performance profiling capabilities
-- Error recovery mechanisms
-- Additional output formats (CONLL, Penn Treebank, Graphviz)
-- Batch processing with parallel support
-- File processing capabilities
-- Custom lexicon support
+- **NLTK Integration** - Complete refactoring to use NLTK for tokenization and POS tagging
+- **Enhanced Grammar Rules** - Implemented all 35 Kirkham grammar rules (Rules 1-35)
+- **Advanced POS Classification** - Context-aware part-of-speech classification
+- **Comprehensive Word Lists** - Expanded lexicon with specialized vocabulary sets
+- **Type Safety Improvements** - Added NLTKPOSTag enum for better type safety
+- **Performance profiling capabilities**
+- **Error recovery mechanisms**
+- **Additional output formats (CONLL, Penn Treebank, Graphviz)**
+- **Batch processing with parallel support**
+- **File processing capabilities**
+- **Custom lexicon support**
 
 ### Changed
-- Improved Unicode handling for apostrophes, quotes, and dashes
-- Enhanced tokenization with character offsets
-- Better error reporting with precise locations
+- **Parser Architecture** - Refactored to use NLTK for core NLP tasks while maintaining Kirkham rules
+- **Word List Organization** - Moved all vocabulary from parser to centralized Lexicon class
+- **Import Organization** - All imports moved to top of files following PEP 8
+- **Code Quality** - Fixed 50+ linting issues for cleaner, more maintainable code
+- **Improved Unicode handling for apostrophes, quotes, and dashes**
+- **Enhanced tokenization with character offsets**
+- **Better error reporting with precise locations**
 
 ### Fixed
-- Various edge cases in grammar rule validation
-- Improved agreement checking for complex verb phrases
-- Better handling of irregular plurals and possessives
+- **Grammar Rule Coverage** - All 35 Kirkham rules now properly implemented and tested
+- **Context-Aware Classification** - Fixed ambiguous word classification (like "like", "work", "wrong")
+- **Text Reconstruction** - Fixed spacing issues in reconstructed text output
+- **Subject-Verb Agreement** - Improved handling of compound subjects and past tense verbs
+- **Article Agreement** - Better detection of article-noun mismatches
+- **Various edge cases in grammar rule validation**
+- **Improved agreement checking for complex verb phrases**
+- **Better handling of irregular plurals and possessives**
 
-## [0.0.2] - 2025-01-27
+## [0.0.2] - 2025-10-05
 
 ### Added
 - **Orthography Rules (ORTHO I-X)** - Complete implementation of Kirkham's spelling rules
@@ -94,7 +108,7 @@ Version 0.1.0 represents a major expansion of the Kirkham Grammar Parser with co
 - No migration required. All existing functionality remains unchanged.
 - New orthography and punctuation validation is enabled by default but can be disabled via configuration.
 
-## [0.0.1] - 2025-01-27
+## [0.0.1] - 2025-10-05
 
 ### Added
 - **Initial Release** - Complete English grammar parser implementation

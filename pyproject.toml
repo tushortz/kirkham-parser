@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kirkham"
-version = "0.0.3"
+version = "0.1.0"
 description = "English Grammar Parser based on Samuel Kirkham's English Grammar (1829)"
 authors = ["Taiwo Kareem <taiwo.kareem36@gmail.com>"]
 maintainers = ["Taiwo Kareem <taiwo.kareem36@gmail.com>"]

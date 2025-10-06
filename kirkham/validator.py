@@ -261,6 +261,14 @@ class GrammarRuleValidator:
         if self.config.enforce_rule_25_strict:
             self._check_rule_25(parse_result)
 
+        # RULE 26: Participles have same government as verbs (if enabled)
+        if self.config.enforce_rule_26_strict:
+            self._check_rule_26(parse_result)
+
+        # RULE 27: Present participle refers to subject/actor (if enabled)
+        if self.config.enforce_rule_27_strict:
+            self._check_rule_27(parse_result)
+
         # RULE 28: Perfect participle belongs to noun/pronoun (if enabled)
         if self.config.enforce_rule_28_strict:
             self._check_rule_28(parse_result)

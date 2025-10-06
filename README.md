@@ -1,6 +1,6 @@
 # Kirkham Grammar Parser
 
-A comprehensive English language parser based on Samuel Kirkham's English Grammar (1829). This implementation provides detailed syntactic analysis, grammar rule validation, and linguistic feature detection for English sentences.
+A comprehensive English language parser based on Samuel Kirkham's English Grammar (1829). This implementation provides detailed syntactic analysis, grammar rule validation, and linguistic feature detection for English sentences using modern NLP techniques with NLTK integration.
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -107,9 +107,11 @@ print(explanation)
 
 ### Core Capabilities
 
+- **NLTK Integration**: Uses NLTK for robust tokenization and part-of-speech tagging
 - **Part-of-Speech Classification**: Identifies 9 parts of speech with grammatical features
+- **Context-Aware Classification**: Handles ambiguous words based on surrounding context
 - **Syntactic Parsing**: Extracts sentence structure (subject, verb, object)
-- **Grammar Rule Validation**: Checks sentences against traditional grammar rules
+- **Comprehensive Grammar Rules**: Implements all 35 Kirkham grammar rules
 - **Orthography Validation**: Validates spelling according to Kirkham's orthography rules
 - **Punctuation Validation**: Checks punctuation usage (commas, semicolons, colons, etc.)
 - **Voice Detection**: Identifies active, passive, or neuter voice
@@ -121,25 +123,44 @@ print(explanation)
 
 ### Grammar Rules Implemented
 
-The parser implements comprehensive checking for Kirkham's grammar rules:
+The parser implements comprehensive checking for all 35 Kirkham grammar rules:
 
-#### Traditional Grammar Rules
+#### Traditional Grammar Rules (Complete Implementation)
 - **RULE 1**: A/an agrees with its noun in the singular only
 - **RULE 2**: The belongs to nouns to limit/define their meaning
 - **RULE 3**: The nominative case governs the verb
 - **RULE 4**: The verb must agree with its nominative in number and person
+- **RULE 5**: Nominative independent case for addressed nouns/pronouns
+- **RULE 6**: Nominative absolute case for nouns/pronouns before participles
+- **RULE 7**: Apposition - nouns/pronouns signifying the same thing are in the same case
 - **RULE 8**: Compound subjects need plural verb/pronoun
+- **RULE 9**: Singular agreement for subjects connected by disjunctive conjunctions
+- **RULE 10**: Singular agreement for collective nouns conveying unity
+- **RULE 11**: Plural agreement for nouns of multitude conveying plurality
 - **RULE 12**: A noun or pronoun in the possessive case is governed by the noun which it possesses
 - **RULE 13**: Personal pronouns agree with their nouns in gender and number
+- **RULE 14**: Relative pronouns agree with their antecedents
+- **RULE 15**: Relative pronoun is nominative when no nominative comes between it and the verb
+- **RULE 16**: Relative pronoun is governed by the following verb when a nominative comes between them
+- **RULE 17**: Interrogative pronouns agree with their subsequent in case
 - **RULE 18**: Adjectives belong to, and qualify, nouns expressed or understood
 - **RULE 19**: Adjective pronouns belong to nouns
 - **RULE 20**: Active-transitive verbs govern the objective case
 - **RULE 21**: To be admits the same case after it as before it
+- **RULE 22**: Active-intransitive, passive, and neuter verbs have the same case before and after them
+- **RULE 23**: Infinitive mood verb is governed by a verb, noun, adjective, participle, or pronoun
+- **RULE 24**: Infinitive mood is used as the nominative case to a verb or the object of an active-transitive verb
 - **RULE 25**: Bare infinitive after certain verbs
-- **RULE 28**: Perfect participle belongs to noun/pronoun
+- **RULE 26**: Participles have the same government as the verbs from which they are derived
+- **RULE 27**: Present participle refers to some noun or pronoun denoting the subject or actor
+- **RULE 28**: Perfect participle belongs, like an adjective, to some noun or pronoun
 - **RULE 29**: Adverbs qualify verbs, participles, adjectives, and other adverbs
-- **RULE 30**: Prepositions are generally placed before the case they govern
+- **RULE 30**: Double negatives
 - **RULE 31**: Prepositions govern the objective case
+- **RULE 32**: Nouns signifying distance/time governed by an understood preposition
+- **RULE 33**: Conjunctions connect nouns and pronouns in the same case
+- **RULE 34**: Conjunctions connect verbs of like moods and tenses
+- **RULE 35**: Case of nouns/pronouns following "than", "as", or "but"
 
 #### Orthography Rules (Spelling)
 - **ORTHO I**: Monosyllables ending in f, l, or s - double final consonant
@@ -180,14 +201,14 @@ The parser follows SOLID principles with a modular, object-oriented design:
 
 ### Core Components
 
-- **`KirkhamParser`**: Main API interface
-- **`PartOfSpeechClassifier`**: Word classification using lexicons and heuristics
+- **`KirkhamParser`**: Main API interface with NLTK integration
+- **`PartOfSpeechClassifier`**: Context-aware word classification using lexicons and heuristics
 - **`SyntacticParser`**: Sentence structure analysis
-- **`GrammarRuleValidator`**: Traditional grammar rule checking
+- **`GrammarRuleValidator`**: Complete implementation of all 35 Kirkham grammar rules
 - **`OrthographyValidator`**: Spelling validation according to Kirkham's orthography rules
 - **`PunctuationValidator`**: Punctuation usage validation
 - **`OutputFormatter`**: Multiple output format support
-- **`Lexicon`**: Pluggable word lists and dictionaries
+- **`Lexicon`**: Comprehensive, pluggable word lists and dictionaries
 
 ### Data Structures
 
@@ -324,6 +345,35 @@ treebank_output = parser._formatter.to_penn_treebank(result)
 graphviz_output = parser._formatter.to_graphviz(result)
 ```
 
+## 🚀 Recent Improvements
+
+### NLTK Integration
+The parser has been completely refactored to use NLTK for robust tokenization and part-of-speech tagging while maintaining all Kirkham grammar rules:
+
+- **Advanced Tokenization**: Uses NLTK's `word_tokenize` for accurate word boundary detection
+- **POS Tagging**: Leverages NLTK's `pos_tag` for reliable part-of-speech classification
+- **Sentence Splitting**: Uses NLTK's `sent_tokenize` for proper sentence boundary detection
+- **Type Safety**: Added `NLTKPOSTag` enum for better type safety and IDE support
+
+### Complete Grammar Rule Implementation
+All 35 Kirkham grammar rules are now fully implemented and tested:
+
+- **Rules 1-35**: Complete coverage of Kirkham's traditional grammar system
+- **Context-Aware Classification**: Handles ambiguous words like "like", "work", "wrong" based on context
+- **Advanced Agreement Checking**: Improved subject-verb agreement for compound subjects and past tense verbs
+- **Enhanced Error Detection**: Better detection of article-noun mismatches and other grammatical issues
+
+### Code Quality Improvements
+- **50+ Linting Issues Fixed**: Clean, maintainable code following Python best practices
+- **Import Organization**: All imports moved to top of files following PEP 8
+- **Type Safety**: Enhanced type hints and enum usage throughout
+- **Word List Centralization**: All vocabulary moved to centralized `Lexicon` class
+
+### Performance Enhancements
+- **Efficient Lookups**: Optimized word list lookups using frozen sets
+- **Reduced Duplication**: Eliminated duplicate entries in word lists
+- **Better Memory Usage**: Improved object creation and management
+
 ## 🧪 Testing
 
 ### Run Tests
@@ -400,8 +450,8 @@ poetry run mypy kirkham/    # Type checking
 
 The parser is designed for speed and efficiency:
 
-- **Pure Python**: No external ML dependencies
-- **Rule-based**: Fast deterministic parsing
+- **NLTK Integration**: Uses proven NLP libraries for robust tokenization and POS tagging
+- **Rule-based**: Fast deterministic parsing with Kirkham's traditional grammar rules
 - **Optimized Lexicons**: Frozen sets for O(1) lookups
 - **Batch Processing**: Parallel processing support
 - **Memory Efficient**: Minimal object overhead
@@ -516,16 +566,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Version**: 0.0.2
+**Version**: 0.1.0
 **Status**: ✅ Active Development
 **Python**: 3.8+
 **License**: MIT
 
 ### What's New in v0.1.0
 
+- 🚀 **NLTK Integration**: Complete refactoring to use NLTK for robust tokenization and POS tagging
+- ✨ **Complete Grammar Rules**: All 35 Kirkham grammar rules now implemented and tested
+- 🧠 **Context-Aware Classification**: Handles ambiguous words based on surrounding context
+- 🔧 **Code Quality**: Fixed 50+ linting issues for cleaner, more maintainable code
+- 📚 **Enhanced Lexicon**: Comprehensive word lists with specialized vocabulary sets
+- 🎯 **Type Safety**: Added NLTKPOSTag enum for better type safety and IDE support
 - ✨ **Orthography Rules**: Complete implementation of Kirkham's spelling rules (ORTHO I-X)
 - ✨ **Punctuation Rules**: Comprehensive punctuation validation (COMMA, SEMICOLON, COLON, etc.)
 - ✨ **Proper Noun Handling**: Smart detection that skips proper nouns in spelling checks
-- ✨ **Enhanced Grammar Rules**: Additional Kirkham grammar rules (RULE 1, 2, 8, 13, 19, 21, 25, 28, 29, 30)
 - ✨ **Configurable Validation**: Granular control over which rules to enforce
 - ✨ **Improved Accuracy**: Better pronoun classification and case detection

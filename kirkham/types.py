@@ -56,6 +56,80 @@ class Person(Enum):
     THIRD = "third"
 
 
+class NLTKPOSTag(Enum):
+    """NLTK Part-of-Speech tag enumeration."""
+
+    # Nouns
+    NN = "NN"  # noun, singular or mass
+    NNS = "NNS"  # noun, plural
+    NNP = "NNP"  # proper noun, singular
+    NNPS = "NNPS"  # proper noun, plural
+
+    # Pronouns
+    PRP = "PRP"  # personal pronoun
+    PRP_DOLLAR = "PRP$"  # possessive pronoun
+    WP = "WP"  # wh-pronoun
+    WP_DOLLAR = "WP$"  # possessive wh-pronoun
+
+    # Verbs
+    VB = "VB"  # verb, base form
+    VBD = "VBD"  # verb, past tense
+    VBG = "VBG"  # verb, gerund or present participle
+    VBN = "VBN"  # verb, past participle
+    VBP = "VBP"  # verb, non-3rd person singular present
+    VBZ = "VBZ"  # verb, 3rd person singular present
+
+    # Adjectives
+    JJ = "JJ"  # adjective
+    JJR = "JJR"  # adjective, comparative
+    JJS = "JJS"  # adjective, superlative
+
+    # Adverbs
+    RB = "RB"  # adverb
+    RBR = "RBR"  # adverb, comparative
+    RBS = "RBS"  # adverb, superlative
+
+    # Prepositions and conjunctions
+    IN = "IN"  # preposition or subordinating conjunction
+    CC = "CC"  # coordinating conjunction
+
+    # Determiners and articles
+    DT = "DT"  # determiner
+    PDT = "PDT"  # predeterminer
+
+    # Numbers
+    CD = "CD"  # cardinal number
+
+    # Other
+    TO = "TO"  # to
+    MD = "MD"  # modal
+    EX = "EX"  # existential there
+    FW = "FW"  # foreign word
+    LS = "LS"  # list item marker
+    POS = "POS"  # possessive ending
+    RP = "RP"  # particle
+    SYM = "SYM"  # symbol
+    UH = "UH"  # interjection
+    WDT = "WDT"  # wh-determiner
+    WRB = "WRB"  # wh-adverb
+
+    # Punctuation
+    PERIOD = "."
+    COMMA = ","
+    COLON = ":"
+    SEMICOLON = ";"
+    EXCLAMATION = "!"
+    QUESTION = "?"
+    QUOTE_DOUBLE = '"'
+    QUOTE_SINGLE = "'"
+    PAREN_LEFT = "("
+    PAREN_RIGHT = ")"
+    BRACKET_LEFT = "["
+    BRACKET_RIGHT = "]"
+    BRACE_LEFT = "{"
+    BRACE_RIGHT = "}"
+
+
 class Voice(Enum):
     """Verb voice enumeration."""
 
