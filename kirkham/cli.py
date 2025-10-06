@@ -227,7 +227,7 @@ def output_verbose(results: list[ParseResult], show_offsets: bool = False) -> No
             print(f"\n\n{'='*70}")
             print(f"SENTENCE {i}")
             print(f"{'='*70}")
-        print(formatter.format_parse_result(result, show_offsets=show_offsets))
+        print(formatter.format_text(result, show_offsets=show_offsets))
 
 
 def output_json(results: list[ParseResult]) -> None:

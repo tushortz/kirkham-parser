@@ -516,7 +516,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Version**: 0.1.0
+**Version**: 0.0.2
 **Status**: ✅ Active Development
 **Python**: 3.8+
 **License**: MIT
